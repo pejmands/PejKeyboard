@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.PopupWindow
 import android.widget.TextView
 import kotlin.math.abs
@@ -32,6 +33,8 @@ class PejKeyboardService : InputMethodService() {
     private var alternatePopupOptions: List<TextView> = emptyList()
     private var selectedAlternateIndex = -1
     private var lastBackspaceTapUpTime: Long? = null
+    private var clearTextPopup: PopupWindow? = null
+    private var clearTextCountdownRunnable: Runnable? = null
 
     private lateinit var keyboard: LinearLayout
 
@@ -109,6 +112,7 @@ class PejKeyboardService : InputMethodService() {
         super.onStartInput(attribute, restarting)
         shiftState.reset()
         dismissAlternatePopup()
+        cancelClearTextCountdown()
 
         if (::keyboard.isInitialized) {
             renderKeyboard()
@@ -117,6 +121,7 @@ class PejKeyboardService : InputMethodService() {
 
     override fun onFinishInput() {
         dismissAlternatePopup()
+        cancelClearTextCountdown()
         super.onFinishInput()
     }
 
@@ -570,6 +575,14 @@ class PejKeyboardService : InputMethodService() {
         var repeatIntervalMs = BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS.toLong()
 
         keyView.setOnTouchListener { _, event ->
+            if (clearTextCountdownRunnable != null &&
+                event.actionMasked == MotionEvent.ACTION_DOWN
+            ) {
+                cancelClearTextCountdown()
+                longPressTriggered = true
+                return@setOnTouchListener true
+            }
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     longPressTriggered = false
@@ -586,7 +599,15 @@ class PejKeyboardService : InputMethodService() {
                         lastBackspaceTapUpTime = null
 
                         if (isDoubleTapHold) {
-                            deleteAllBeforeCursor()
+                            val clearPreferences = getSharedPreferences(
+                                BackspaceSettings.PREFERENCES_NAME,
+                                MODE_PRIVATE
+                            )
+                            startClearTextCountdown(
+                                keyView,
+                                BackspaceSettings.readClearDelay(clearPreferences).toLong(),
+                                BackspaceSettings.readShowClearWarning(clearPreferences)
+                            )
                         } else {
                             deletePreviousWord()
                             repeatRunnable = object : Runnable {
@@ -614,6 +635,10 @@ class PejKeyboardService : InputMethodService() {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
 
+                    if (clearTextCountdownRunnable != null) {
+                        cancelClearTextCountdown()
+                    }
+
                     if (!longPressTriggered) {
                         currentInputConnection?.deleteSurroundingText(1, 0)
                         lastBackspaceTapUpTime = event.eventTime
@@ -625,6 +650,7 @@ class PejKeyboardService : InputMethodService() {
                 MotionEvent.ACTION_CANCEL -> {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
+                    cancelClearTextCountdown()
                     longPressTriggered = false
                     true
                 }
@@ -632,6 +658,138 @@ class PejKeyboardService : InputMethodService() {
                 else -> true
             }
         }
+    }
+
+
+    private fun startClearTextCountdown(
+        anchor: View,
+        durationMs: Long,
+        showWarning: Boolean
+    ) {
+        cancelClearTextCountdown()
+
+        var progressBar: ProgressBar? = null
+        var countdownLabel: TextView? = null
+
+        if (showWarning) {
+            val popupContent = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                setPadding(16.dp(), 12.dp(), 16.dp(), 12.dp())
+                background = GradientDrawable().apply {
+                    setColor(specialKeyColor)
+                    cornerRadius = 12.dp().toFloat()
+                    setStroke(1.dp(), keyBorderColor)
+                }
+            }
+
+            popupContent.addView(TextView(this).apply {
+                text = getString(R.string.backspace_clear_warning_title)
+                textSize = 16f
+                setTextColor(textColor)
+            }, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 6.dp()
+            })
+
+            popupContent.addView(TextView(this).apply {
+                text = getString(R.string.backspace_clear_warning_message)
+                textSize = 13f
+                setTextColor(textColor)
+            }, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 8.dp()
+            })
+
+            countdownLabel = TextView(this).apply {
+                text = getString(R.string.setting_value_seconds, durationMs / 1000f)
+                textSize = 13f
+                setTextColor(textColor)
+                gravity = Gravity.CENTER
+            }
+            popupContent.addView(countdownLabel, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 4.dp()
+            })
+
+            progressBar = ProgressBar(
+                this,
+                null,
+                android.R.attr.progressBarStyleHorizontal
+            ).apply {
+                max = 1000
+                progress = 0
+                progressTintList = ColorStateList.valueOf(accentColor)
+                progressBackgroundTintList = ColorStateList.valueOf(keyBorderColor)
+            }
+            popupContent.addView(progressBar, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                6.dp()
+            ))
+
+            popupContent.measure(
+                View.MeasureSpec.makeMeasureSpec(260.dp(), View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+
+            val popup = PopupWindow(
+                popupContent,
+                260.dp(),
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                false
+            ).apply {
+                isTouchable = true
+                isOutsideTouchable = false
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                elevation = 8.dp().toFloat()
+            }
+
+            popup.setClippingEnabled(false)
+            popup.showAsDropDown(
+                anchor,
+                (anchor.width - 260.dp()) / 2,
+                -anchor.height - popupContent.measuredHeight
+            )
+            clearTextPopup = popup
+        }
+
+        val startedAt = SystemClock.uptimeMillis()
+        clearTextCountdownRunnable = object : Runnable {
+            override fun run() {
+                val elapsed = SystemClock.uptimeMillis() - startedAt
+                val remaining = (durationMs - elapsed).coerceAtLeast(0L)
+
+                progressBar?.progress = ((elapsed.coerceAtMost(durationMs) * 1000L) /
+                    durationMs).toInt()
+                countdownLabel?.text = getString(
+                    R.string.setting_value_seconds,
+                    remaining / 1000f
+                )
+
+                if (remaining == 0L) {
+                    clearTextCountdownRunnable = null
+                    clearTextPopup?.dismiss()
+                    clearTextPopup = null
+                    deleteAllBeforeCursor()
+                } else {
+                    gestureHandler.postDelayed(this, CLEAR_TEXT_COUNTDOWN_UPDATE_MS)
+                }
+            }
+        }
+        gestureHandler.post(clearTextCountdownRunnable!!)
+    }
+
+    private fun cancelClearTextCountdown() {
+        clearTextCountdownRunnable?.let(gestureHandler::removeCallbacks)
+        clearTextCountdownRunnable = null
+        clearTextPopup?.dismiss()
+        clearTextPopup = null
     }
 
     private fun deletePreviousWord() {
@@ -661,6 +819,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun handleEnter() {
+        cancelClearTextCountdown()
         val connection = currentInputConnection ?: return
 
         val action = currentInputEditorInfo?.imeOptions
@@ -679,6 +838,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun commitKey(key: String) {
+        cancelClearTextCountdown()
         currentInputConnection?.commitText(key, 1)
     }
 
@@ -699,6 +859,7 @@ class PejKeyboardService : InputMethodService() {
         private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
+        private const val CLEAR_TEXT_COUNTDOWN_UPDATE_MS = 50L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }

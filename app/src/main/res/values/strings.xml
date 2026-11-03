@@ -13,5 +13,11 @@
     <string name="backspace_hold_duration_description">مدت لازم برای نگه‌داشتن کلید پس‌بر پیش از شروع حذف کلمه‌ای.</string>
     <string name="backspace_repeat_interval_title">فاصلهٔ تکرار حذف کلمه‌ها</string>
     <string name="backspace_repeat_interval_description">فاصلهٔ زمانی بین حذف هر کلمه هنگام نگه‌داشتن کلید.</string>
+    <string name="backspace_clear_delay_title">زمان انتظار پیش از پاک‌کردن کامل متن</string>
+    <string name="backspace_clear_delay_description">مدت شمارش معکوس پس از دابل‌تپ و نگه‌داشتن کلید پس‌بر.</string>
+    <string name="backspace_show_clear_warning">نمایش هشدار پیش از پاک‌کردن متن</string>
+    <string name="backspace_clear_warning_title">پاک‌کردن کامل متن</string>
+    <string name="backspace_clear_warning_message">تمام متن قبل از مکان‌نما پاک خواهد شد.</string>
+    <string name="setting_value_seconds">%1$.1f ثانیه</string>
     <string name="setting_value_milliseconds">%1$d میلی‌ثانیه</string>
 </resources>

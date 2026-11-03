@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -106,6 +107,21 @@ class MainActivity : Activity() {
             BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS
         )
 
+        addDivider(content)
+
+        addSecondsSetting(content, preferences)
+
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.backspace_show_clear_warning)
+            textSize = 15f
+            isChecked = BackspaceSettings.readShowClearWarning(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(BackspaceSettings.KEY_SHOW_CLEAR_WARNING, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight())
+
         setContentView(ScrollView(this).apply {
             isFillViewport = true
             addView(content)
@@ -155,6 +171,52 @@ class MainActivity : Activity() {
         content.addView(valueLabel, matchWidthWrapHeight())
         content.addView(seekBar, matchWidthWrapHeight().apply {
             bottomMargin = 20.dp()
+        })
+    }
+
+
+    private fun addSecondsSetting(
+        content: LinearLayout,
+        preferences: android.content.SharedPreferences
+    ) {
+        content.addView(
+            createTitle(R.string.backspace_clear_delay_title, 16f),
+            matchWidthWrapHeight().apply { bottomMargin = 4.dp() }
+        )
+        content.addView(TextView(this).apply {
+            text = getString(R.string.backspace_clear_delay_description)
+            textSize = 13f
+        }, matchWidthWrapHeight().apply {
+            bottomMargin = 8.dp()
+        })
+
+        val initialValue = BackspaceSettings.readClearDelay(preferences)
+        val valueLabel = TextView(this).apply {
+            text = getString(R.string.setting_value_seconds, initialValue / 1000f)
+            textSize = 14f
+        }
+        val seekBar = SeekBar(this).apply {
+            max = (BackspaceSettings.CLEAR_DELAY_MAX_MS - BackspaceSettings.CLEAR_DELAY_MIN_MS) /
+                BackspaceSettings.CLEAR_DELAY_STEP_MS
+            progress = (initialValue - BackspaceSettings.CLEAR_DELAY_MIN_MS) /
+                BackspaceSettings.CLEAR_DELAY_STEP_MS
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    val value = BackspaceSettings.CLEAR_DELAY_MIN_MS +
+                        progress * BackspaceSettings.CLEAR_DELAY_STEP_MS
+                    valueLabel.text = getString(R.string.setting_value_seconds, value / 1000f)
+                    preferences.edit()
+                        .putInt(BackspaceSettings.KEY_CLEAR_DELAY_MS, value)
+                        .apply()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            })
+        }
+        content.addView(valueLabel, matchWidthWrapHeight())
+        content.addView(seekBar, matchWidthWrapHeight().apply {
+            bottomMargin = 16.dp()
         })
     }
 

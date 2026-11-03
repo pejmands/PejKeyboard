@@ -8,6 +8,8 @@ internal object BackspaceSettings {
 
     const val KEY_HOLD_DURATION_MS = "backspace_hold_duration_ms"
     const val KEY_REPEAT_INTERVAL_MS = "backspace_repeat_interval_ms"
+    const val KEY_CLEAR_DELAY_MS = "backspace_clear_delay_ms"
+    const val KEY_SHOW_CLEAR_WARNING = "backspace_show_clear_warning"
 
     const val HOLD_DURATION_MIN_MS = 300
     const val HOLD_DURATION_MAX_MS = 1000
@@ -19,15 +21,30 @@ internal object BackspaceSettings {
     const val REPEAT_INTERVAL_STEP_MS = 20
     const val REPEAT_INTERVAL_DEFAULT_MS = 180
 
+    const val CLEAR_DELAY_MIN_MS = 1000
+    const val CLEAR_DELAY_MAX_MS = 10000
+    const val CLEAR_DELAY_STEP_MS = 500
+    const val CLEAR_DELAY_DEFAULT_MS = 3000
+    const val SHOW_CLEAR_WARNING_DEFAULT = true
+
     fun normalizeHoldDuration(value: Int): Int =
         value.coerceIn(HOLD_DURATION_MIN_MS, HOLD_DURATION_MAX_MS)
 
     fun normalizeRepeatInterval(value: Int): Int =
         value.coerceIn(REPEAT_INTERVAL_MIN_MS, REPEAT_INTERVAL_MAX_MS)
 
+    fun normalizeClearDelay(value: Int): Int =
+        value.coerceIn(CLEAR_DELAY_MIN_MS, CLEAR_DELAY_MAX_MS)
+
     fun readHoldDuration(preferences: SharedPreferences): Int =
         normalizeHoldDuration(preferences.getInt(KEY_HOLD_DURATION_MS, HOLD_DURATION_DEFAULT_MS))
 
     fun readRepeatInterval(preferences: SharedPreferences): Int =
         normalizeRepeatInterval(preferences.getInt(KEY_REPEAT_INTERVAL_MS, REPEAT_INTERVAL_DEFAULT_MS))
+
+    fun readClearDelay(preferences: SharedPreferences): Int =
+        normalizeClearDelay(preferences.getInt(KEY_CLEAR_DELAY_MS, CLEAR_DELAY_DEFAULT_MS))
+
+    fun readShowClearWarning(preferences: SharedPreferences): Boolean =
+        preferences.getBoolean(KEY_SHOW_CLEAR_WARNING, SHOW_CLEAR_WARNING_DEFAULT)
 }
