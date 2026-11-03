@@ -737,6 +737,11 @@ class PejKeyboardService : InputMethodService() {
                 gravity = Gravity.CENTER
             })
 
+            popupContent.measure(
+                View.MeasureSpec.makeMeasureSpec(260.dp(), View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+
             val popup = PopupWindow(
                 popupContent,
                 260.dp(),
@@ -753,7 +758,7 @@ class PejKeyboardService : InputMethodService() {
             popup.showAsDropDown(
                 anchor,
                 (anchor.width - 260.dp()) / 2,
-                -anchor.height - 150.dp()
+                -anchor.height - popupContent.measuredHeight
             )
             clearTextPopup = popup
         }
