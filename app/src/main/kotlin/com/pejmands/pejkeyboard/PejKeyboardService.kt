@@ -78,9 +78,9 @@ class PejKeyboardService : InputMethodService() {
     )
 
     private val englishRows = listOf(
-        listOf("p", "o", "i", "u", "y", "t", "r", "e", "w", "q"),
-        listOf("l", "k", "j", "h", "g", "f", "d", "s", "a"),
-        listOf("m", "n", "b", "v", "c", "x", "z")
+        listOf("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"),
+        listOf("a", "s", "d", "f", "g", "h", "j", "k", "l"),
+        listOf("z", "x", "c", "v", "b", "n", "m")
     )
 
     private val alternateCharacters = mapOf(
@@ -654,8 +654,8 @@ class PejKeyboardService : InputMethodService() {
                     repeatIntervalMs = BackspaceSettings.readRepeatInterval(preferences).toLong()
                     val previousTapTime = lastBackspaceTapUpTime
                     isDoubleTapHold = previousTapTime != null &&
-                        event.eventTime >= previousTapTime &&
-                        event.eventTime - previousTapTime <= doubleTapTimeout
+                            event.eventTime >= previousTapTime &&
+                            event.eventTime - previousTapTime <= doubleTapTimeout
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
@@ -753,27 +753,29 @@ class PejKeyboardService : InputMethodService() {
                 }
             }
 
-            popupContent.addView(TextView(this).apply {
-                text = getString(R.string.backspace_clear_warning_title)
-                textSize = 16f
-                setTextColor(textColor)
-            }, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 6.dp()
-            })
+            popupContent.addView(
+                TextView(this).apply {
+                    text = getString(R.string.backspace_clear_warning_title)
+                    textSize = 16f
+                    setTextColor(textColor)
+                }, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 6.dp()
+                })
 
-            popupContent.addView(TextView(this).apply {
-                text = getString(R.string.backspace_clear_warning_message)
-                textSize = 13f
-                setTextColor(textColor)
-            }, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 8.dp()
-            })
+            popupContent.addView(
+                TextView(this).apply {
+                    text = getString(R.string.backspace_clear_warning_message)
+                    textSize = 13f
+                    setTextColor(textColor)
+                }, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 8.dp()
+                })
 
             countdownLabel = TextView(this).apply {
                 text = getString(R.string.setting_value_seconds, durationMs / 1000f)
@@ -781,12 +783,13 @@ class PejKeyboardService : InputMethodService() {
                 setTextColor(textColor)
                 gravity = Gravity.CENTER
             }
-            popupContent.addView(countdownLabel, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 4.dp()
-            })
+            popupContent.addView(
+                countdownLabel, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 4.dp()
+                })
 
             progressBar = ProgressBar(
                 this,
@@ -798,10 +801,12 @@ class PejKeyboardService : InputMethodService() {
                 progressTintList = ColorStateList.valueOf(accentColor)
                 progressBackgroundTintList = ColorStateList.valueOf(keyBorderColor)
             }
-            popupContent.addView(progressBar, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                6.dp()
-            ))
+            popupContent.addView(
+                progressBar, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    6.dp()
+                )
+            )
 
             popupContent.measure(
                 View.MeasureSpec.makeMeasureSpec(260.dp(), View.MeasureSpec.EXACTLY),
@@ -836,7 +841,7 @@ class PejKeyboardService : InputMethodService() {
                 val remaining = (durationMs - elapsed).coerceAtLeast(0L)
 
                 progressBar?.progress = ((elapsed.coerceAtMost(durationMs) * 1000L) /
-                    durationMs).toInt()
+                        durationMs).toInt()
                 countdownLabel?.text = getString(
                     R.string.setting_value_seconds,
                     remaining / 1000f
