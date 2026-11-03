@@ -7,6 +7,10 @@
     <string name="alternate_selection_description">روش انتخاب نویسه‌های جایگزین هنگام نگه‌داشتن کلید را انتخاب کنید.</string>
     <string name="alternate_selection_tap">باز کردن پنجره و لمس نویسه</string>
     <string name="alternate_selection_swipe">کشیدن انگشت روی نویسه و رها کردن</string>
+    <string name="keyboard_feedback_title">بازخورد کلیدها</string>
+    <string name="keyboard_sound_title">صدای کلیدها</string>
+    <string name="keyboard_vibration_title">لرزش کلیدها</string>
+    <string name="feedback_intensity_percent">%1$d٪</string>
     <string name="backspace_settings_title">تنظیمات پس‌بر</string>
     <string name="backspace_settings_description">زمان‌بندی حذف نویسه و کلمه را مطابق سلیقهٔ خود تنظیم کنید.</string>
     <string name="backspace_hold_duration_title">مدت نگه‌داشتن برای شروع حذف کلمه</string>

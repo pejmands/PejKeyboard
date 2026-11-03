@@ -74,6 +74,29 @@ class MainActivity : Activity() {
         addDivider(content)
 
         content.addView(
+            createTitle(R.string.keyboard_feedback_title),
+            matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
+        )
+
+        addFeedbackIntensitySetting(
+            content,
+            preferences,
+            R.string.keyboard_sound_title,
+            KeyboardFeedbackSettings.KEY_SOUND_INTENSITY,
+            KeyboardFeedbackSettings.readSoundIntensity(preferences)
+        )
+
+        addFeedbackIntensitySetting(
+            content,
+            preferences,
+            R.string.keyboard_vibration_title,
+            KeyboardFeedbackSettings.KEY_VIBRATION_INTENSITY,
+            KeyboardFeedbackSettings.readVibrationIntensity(preferences)
+        )
+
+        addDivider(content)
+
+        content.addView(
             createTitle(R.string.backspace_settings_title),
             matchWidthWrapHeight().apply { bottomMargin = 8.dp() }
         )
@@ -125,6 +148,43 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply {
             isFillViewport = true
             addView(content)
+        })
+    }
+
+    private fun addFeedbackIntensitySetting(
+        content: LinearLayout,
+        preferences: android.content.SharedPreferences,
+        titleRes: Int,
+        preferenceKey: String,
+        initialValue: Int
+    ) {
+        content.addView(
+            createTitle(titleRes, 16f),
+            matchWidthWrapHeight().apply { bottomMargin = 4.dp() }
+        )
+
+        val valueLabel = TextView(this).apply {
+            text = getString(R.string.feedback_intensity_percent, initialValue)
+            textSize = 14f
+        }
+        val seekBar = SeekBar(this).apply {
+            max = KeyboardFeedbackSettings.INTENSITY_MAX / KeyboardFeedbackSettings.INTENSITY_STEP
+            progress = initialValue / KeyboardFeedbackSettings.INTENSITY_STEP
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    val value = progress * KeyboardFeedbackSettings.INTENSITY_STEP
+                    valueLabel.text = getString(R.string.feedback_intensity_percent, value)
+                    preferences.edit().putInt(preferenceKey, value).apply()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            })
+        }
+
+        content.addView(valueLabel, matchWidthWrapHeight())
+        content.addView(seekBar, matchWidthWrapHeight().apply {
+            bottomMargin = 16.dp()
         })
     }
 
