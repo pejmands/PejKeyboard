@@ -18,7 +18,6 @@
     <string name="backspace_show_clear_warning">نمایش هشدار پیش از پاک‌کردن متن</string>
     <string name="backspace_clear_warning_title">پاک‌کردن کامل متن</string>
     <string name="backspace_clear_warning_message">تمام متن قبل از مکان‌نما پاک خواهد شد.</string>
-    <string name="backspace_clear_cancel">لغو</string>
     <string name="setting_value_seconds">%1$.1f ثانیه</string>
     <string name="setting_value_milliseconds">%1$d میلی‌ثانیه</string>
 </resources>
