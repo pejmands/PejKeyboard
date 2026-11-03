@@ -697,7 +697,7 @@ class PejKeyboardService : InputMethodService() {
         private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
-        private const val BACKSPACE_REPEAT_INTERVAL_MS = 120L
+        private const val BACKSPACE_REPEAT_INTERVAL_MS = 180L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }
