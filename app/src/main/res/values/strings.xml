@@ -7,6 +7,8 @@
     <string name="alternate_selection_description">روش انتخاب نویسه‌های جایگزین هنگام نگه‌داشتن کلید را انتخاب کنید.</string>
     <string name="alternate_selection_tap">باز کردن پنجره و لمس نویسه</string>
     <string name="alternate_selection_swipe">کشیدن انگشت روی نویسه و رها کردن</string>
+    <string name="alternate_popup_hold_duration_title">مدت نگه‌داشتن برای نمایش پنجره</string>
+    <string name="alternate_popup_hold_duration_description">مدت لازم برای نگه‌داشتن کلید پیش از نمایش نویسه‌های جایگزین؛ این مقدار برای هر دو روش لمس و کشیدن اعمال می‌شود.</string>
     <string name="keyboard_gestures_title">ژست‌های حرکتی کیبورد</string>
     <string name="keyboard_gestures_description">برای جابه‌جایی مکان‌نما یا حذف نویسه، انگشت را روی سطح کیبورد در یکی از چهار جهت بکشید.</string>
     <string name="gesture_repeat_enabled">تکرار عملیات با ادامهٔ کشیدن انگشت</string>
