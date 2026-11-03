@@ -11,6 +11,7 @@ import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.media.AudioManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.Gravity
@@ -335,8 +336,7 @@ class PejKeyboardService : InputMethodService() {
             isClickable = true
             isFocusable = true
 
-            val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
-            isSoundEffectsEnabled = KeyboardFeedbackSettings.readSoundEnabled(preferences)
+            isSoundEffectsEnabled = true
 
             background = RippleDrawable(
                 ColorStateList.valueOf(
@@ -373,25 +373,43 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun performKeySoundFeedback(keyView: View) {
-        if (keyView.isSoundEffectsEnabled) {
-            keyView.playSoundEffect(SoundEffectConstants.CLICK)
+        if (!keyView.isSoundEffectsEnabled) {
+            return
         }
+
+        val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+        val level = KeyboardFeedbackSettings.readSoundLevel(preferences)
+        if (level == KeyboardFeedbackLevel.OFF) {
+            return
+        }
+
+        val volume = when (level) {
+            KeyboardFeedbackLevel.OFF -> 0f
+            KeyboardFeedbackLevel.LOW -> 0.25f
+            KeyboardFeedbackLevel.MEDIUM -> 0.5f
+            KeyboardFeedbackLevel.HIGH -> 1f
+        }
+        getSystemService(AudioManager::class.java)
+            ?.playSoundEffect(SoundEffectConstants.CLICK, volume)
     }
 
     private fun performKeyHapticFeedback() {
         val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
-        if (!KeyboardFeedbackSettings.readVibrationEnabled(preferences)) {
+        val level = KeyboardFeedbackSettings.readVibrationLevel(preferences)
+        if (level == KeyboardFeedbackLevel.OFF) {
             return
+        }
+
+        val (durationMs, amplitude) = when (level) {
+            KeyboardFeedbackLevel.OFF -> return
+            KeyboardFeedbackLevel.LOW -> 12L to 70
+            KeyboardFeedbackLevel.MEDIUM -> 20L to 140
+            KeyboardFeedbackLevel.HIGH -> 30L to 255
         }
 
         val vibrator = getSystemService(Vibrator::class.java) ?: return
         if (vibrator.hasVibrator()) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(
-                    KEY_VIBRATION_DURATION_MS,
-                    VibrationEffect.DEFAULT_AMPLITUDE
-                )
-            )
+            vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude))
         }
     }
 
@@ -910,7 +928,6 @@ class PejKeyboardService : InputMethodService() {
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
         private const val CLEAR_TEXT_COUNTDOWN_UPDATE_MS = 50L
-        private const val KEY_VIBRATION_DURATION_MS = 20L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }
