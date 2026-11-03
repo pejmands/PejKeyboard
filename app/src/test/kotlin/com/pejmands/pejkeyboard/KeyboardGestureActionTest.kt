@@ -20,6 +20,17 @@ class KeyboardGestureActionTest {
     }
 
     @Test
+    fun gestureRepeatDefaultsToEnabledWhenPreferenceIsMissing() {
+        assertEquals(true, KeyboardGestureSettings.isRepeatEnabled(null))
+    }
+
+    @Test
+    fun gestureRepeatUsesTheSavedPreference() {
+        assertEquals(true, KeyboardGestureSettings.isRepeatEnabled(true))
+        assertEquals(false, KeyboardGestureSettings.isRepeatEnabled(false))
+    }
+
+    @Test
     fun eachDirectionHasAnIndependentPreferenceKey() {
         assertEquals(
             setOf("keyboard_gesture_left", "keyboard_gesture_right", "keyboard_gesture_up", "keyboard_gesture_down"),
