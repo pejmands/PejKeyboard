@@ -509,8 +509,9 @@ class PejKeyboardService : InputMethodService() {
             -anchor.height - popupContent.measuredHeight
         )
 
+        alternatePopup = popup
+
         if (swipeSelection) {
-            alternatePopup = popup
             alternatePopupOptions = optionViews
             selectedAlternateIndex = -1
         }
