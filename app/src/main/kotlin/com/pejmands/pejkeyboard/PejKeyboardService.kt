@@ -381,14 +381,6 @@ class PejKeyboardService : InputMethodService() {
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
-            if (clearTextCountdownRunnable != null &&
-                event.actionMasked == MotionEvent.ACTION_DOWN
-            ) {
-                cancelClearTextCountdown()
-                longPressTriggered = true
-                return@setOnTouchListener true
-            }
-
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downX = event.rawX
@@ -584,6 +576,14 @@ class PejKeyboardService : InputMethodService() {
         var repeatIntervalMs = BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS.toLong()
 
         keyView.setOnTouchListener { _, event ->
+            if (clearTextCountdownRunnable != null &&
+                event.actionMasked == MotionEvent.ACTION_DOWN
+            ) {
+                cancelClearTextCountdown()
+                longPressTriggered = true
+                return@setOnTouchListener true
+            }
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     longPressTriggered = false
