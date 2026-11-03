@@ -10,9 +10,9 @@ import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.os.SystemClock
 import android.view.ViewConfiguration
+import android.widget.TextView
 
 class PejKeyboardService : InputMethodService() {
 
@@ -195,9 +195,7 @@ class PejKeyboardService : InputMethodService() {
             createKey(if (isPersian) "FA" else "EN", specialKeyColor) {
                 isPersian = !isPersian
                 isNumberMode = false
-                isShifted = false
-                isCapsLock = false
-                lastShiftTapTime = 0L
+                shiftState.reset()
                 renderKeyboard()
             },
             keyLayoutParams(1f)
