@@ -102,7 +102,13 @@ class PejKeyboardService : InputMethodService() {
     )
 
     override fun onCreateInputView(): View {
-        keyboard = GestureKeyboardLayout(this) { direction, steps, isFirstStep ->
+        keyboard = GestureKeyboardLayout(
+            this,
+            isRepeatEnabled = {
+                val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+                KeyboardGestureSettings.readRepeatEnabled(preferences)
+            }
+        ) { direction, steps, isFirstStep ->
             handleKeyboardGesture(direction, steps, isFirstStep)
         }.apply {
             orientation = LinearLayout.VERTICAL
