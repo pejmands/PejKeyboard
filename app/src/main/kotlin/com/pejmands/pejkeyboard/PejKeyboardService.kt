@@ -3,6 +3,7 @@ package com.pejmands.pejkeyboard
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.inputmethodservice.InputMethodService
@@ -341,6 +342,8 @@ class PejKeyboardService : InputMethodService() {
             }
         }
 
+        lateinit var popup: PopupWindow
+
         alternatives.forEach { character ->
             val displayCharacter = if (character in listOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")) {
                 "◌$character"
@@ -369,13 +372,14 @@ class PejKeyboardService : InputMethodService() {
             )
         }
 
-        val popup = PopupWindow(
+        popup = PopupWindow(
             popupContent,
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
             true
         ).apply {
             isOutsideTouchable = true
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             elevation = 8.dp().toFloat()
         }
 
