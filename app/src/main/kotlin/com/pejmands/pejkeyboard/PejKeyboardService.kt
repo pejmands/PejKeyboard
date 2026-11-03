@@ -275,8 +275,9 @@ class PejKeyboardService : InputMethodService() {
             keyLayoutParams(0.65f)
         )
 
+        val enterLabel = getEnterKeyLabel()
         row.addView(
-            createKey("↵", accentColor, Color.WHITE) {
+            createKey(enterLabel, accentColor, Color.WHITE, if (enterLabel.length > 2) 14f else 20f) {
                 handleEnter()
             },
             keyLayoutParams(1f)
@@ -943,6 +944,23 @@ class PejKeyboardService : InputMethodService() {
             if (!connection.deleteSurroundingText(textBeforeCursor.length, 0)) {
                 return
             }
+        }
+    }
+
+    private fun getEnterKeyLabel(): String {
+        val imeOptions = currentInputEditorInfo?.imeOptions ?: return "↵"
+        if (imeOptions and EditorInfo.IME_FLAG_NO_ENTER_ACTION != 0) {
+            return "↵"
+        }
+
+        return when (imeOptions and EditorInfo.IME_MASK_ACTION) {
+            EditorInfo.IME_ACTION_GO -> "Go"
+            EditorInfo.IME_ACTION_SEARCH -> "⌕"
+            EditorInfo.IME_ACTION_SEND -> "➤"
+            EditorInfo.IME_ACTION_NEXT -> "→"
+            EditorInfo.IME_ACTION_DONE -> "✓"
+            EditorInfo.IME_ACTION_PREVIOUS -> "←"
+            else -> "↵"
         }
     }
 
