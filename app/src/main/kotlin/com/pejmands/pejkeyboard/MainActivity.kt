@@ -74,6 +74,17 @@ class MainActivity : Activity() {
         }
         content.addView(options, matchWidthWrapHeight())
 
+        addTimingSetting(
+            content, preferences,
+            R.string.alternate_popup_hold_duration_title,
+            R.string.alternate_popup_hold_duration_description,
+            AlternatePopupSettings.KEY_HOLD_DURATION_MS,
+            AlternatePopupSettings.HOLD_DURATION_MIN_MS,
+            AlternatePopupSettings.HOLD_DURATION_MAX_MS,
+            AlternatePopupSettings.HOLD_DURATION_STEP_MS,
+            AlternatePopupSettings.HOLD_DURATION_DEFAULT_MS
+        )
+
         addDivider(content)
 
         content.addView(
