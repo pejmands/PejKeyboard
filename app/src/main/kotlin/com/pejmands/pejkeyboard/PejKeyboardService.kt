@@ -31,6 +31,7 @@ class PejKeyboardService : InputMethodService() {
     private var alternatePopup: PopupWindow? = null
     private var alternatePopupOptions: List<TextView> = emptyList()
     private var selectedAlternateIndex = -1
+    private var lastBackspaceTapUpTime: Long? = null
 
     private lateinit var keyboard: LinearLayout
 
@@ -187,10 +188,11 @@ class PejKeyboardService : InputMethodService() {
             )
         }
 
+        val backspaceKey = createKey("⌫", specialKeyColor) {}
+        installBackspaceBehavior(backspaceKey)
+
         row.addView(
-            createKey("⌫", specialKeyColor) {
-                currentInputConnection?.deleteSurroundingText(1, 0)
-            },
+            backspaceKey,
             keyLayoutParams(1.25f)
         )
 
@@ -557,6 +559,104 @@ class PejKeyboardService : InputMethodService() {
         selectedAlternateIndex = -1
     }
 
+
+    private fun installBackspaceBehavior(keyView: View) {
+        val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout().toLong()
+        val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
+
+        var longPressTriggered = false
+        var isDoubleTapHold = false
+        var longPressRunnable: Runnable? = null
+        var repeatRunnable: Runnable? = null
+
+        keyView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    longPressTriggered = false
+                    val previousTapTime = lastBackspaceTapUpTime
+                    isDoubleTapHold = previousTapTime != null &&
+                        event.eventTime >= previousTapTime &&
+                        event.eventTime - previousTapTime <= doubleTapTimeout
+
+                    longPressRunnable = Runnable {
+                        longPressTriggered = true
+                        lastBackspaceTapUpTime = null
+
+                        if (isDoubleTapHold) {
+                            deleteAllBeforeCursor()
+                        } else {
+                            deletePreviousWord()
+                            repeatRunnable = object : Runnable {
+                                override fun run() {
+                                    if (!longPressTriggered || isDoubleTapHold) {
+                                        return
+                                    }
+
+                                    deletePreviousWord()
+                                    gestureHandler.postDelayed(this, BACKSPACE_REPEAT_INTERVAL_MS)
+                                }
+                            }
+                            gestureHandler.postDelayed(
+                                repeatRunnable!!,
+                                BACKSPACE_REPEAT_INTERVAL_MS
+                            )
+                        }
+                    }
+
+                    gestureHandler.postDelayed(longPressRunnable!!, longPressTimeout)
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    repeatRunnable?.let(gestureHandler::removeCallbacks)
+
+                    if (!longPressTriggered) {
+                        currentInputConnection?.deleteSurroundingText(1, 0)
+                        lastBackspaceTapUpTime = event.eventTime
+                    }
+
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    repeatRunnable?.let(gestureHandler::removeCallbacks)
+                    longPressTriggered = false
+                    true
+                }
+
+                else -> true
+            }
+        }
+    }
+
+    private fun deletePreviousWord() {
+        val connection = currentInputConnection ?: return
+        val textBeforeCursor = connection.getTextBeforeCursor(BACKSPACE_CONTEXT_LENGTH, 0) ?: return
+        val deleteLength = BackspaceWordDeletion.length(textBeforeCursor)
+
+        if (deleteLength > 0) {
+            connection.deleteSurroundingText(deleteLength, 0)
+        }
+    }
+
+    private fun deleteAllBeforeCursor() {
+        val connection = currentInputConnection ?: return
+
+        repeat(MAX_BACKSPACE_DELETE_BATCHES) {
+            val textBeforeCursor = connection.getTextBeforeCursor(BACKSPACE_CONTEXT_LENGTH, 0)
+                ?: return
+            if (textBeforeCursor.isEmpty()) {
+                return
+            }
+
+            if (!connection.deleteSurroundingText(textBeforeCursor.length, 0)) {
+                return
+            }
+        }
+    }
+
     private fun handleEnter() {
         val connection = currentInputConnection ?: return
 
@@ -595,6 +695,9 @@ class PejKeyboardService : InputMethodService() {
     companion object {
         private const val SETTINGS_PREFERENCES = "keyboard_settings"
         private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
+        private const val BACKSPACE_CONTEXT_LENGTH = 2048
+        private const val MAX_BACKSPACE_DELETE_BATCHES = 256
+        private const val BACKSPACE_REPEAT_INTERVAL_MS = 180L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }
