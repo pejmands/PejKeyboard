@@ -12,7 +12,9 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
@@ -332,6 +334,10 @@ class PejKeyboardService : InputMethodService() {
             isClickable = true
             isFocusable = true
 
+            val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+            isSoundEffectsEnabled = KeyboardFeedbackSettings.readSoundEnabled(preferences)
+            isHapticFeedbackEnabled = KeyboardFeedbackSettings.readVibrationEnabled(preferences)
+
             background = RippleDrawable(
                 ColorStateList.valueOf(
                     if (isDarkMode) Color.rgb(190, 198, 212)
@@ -341,13 +347,18 @@ class PejKeyboardService : InputMethodService() {
                 mask
             )
 
-            setOnClickListener { action() }
+            setOnClickListener {
+                performKeyHapticFeedback(this)
+                action()
+            }
 
             val alternatives = alternateCharacters[label.lowercase()]
             if (!alternatives.isNullOrEmpty()) {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
                         setOnLongClickListener {
+                            performKeySoundFeedback(this)
+                            performKeyHapticFeedback(this)
                             showAlternatives(this, alternatives, swipeSelection = false)
                             true
                         }
@@ -358,6 +369,18 @@ class PejKeyboardService : InputMethodService() {
                     }
                 }
             }
+        }
+    }
+
+    private fun performKeySoundFeedback(keyView: View) {
+        if (keyView.isSoundEffectsEnabled) {
+            keyView.playSoundEffect(SoundEffectConstants.CLICK)
+        }
+    }
+
+    private fun performKeyHapticFeedback(keyView: View) {
+        if (keyView.isHapticFeedbackEnabled) {
+            keyView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         }
     }
 
@@ -382,6 +405,7 @@ class PejKeyboardService : InputMethodService() {
         keyView.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    keyView.isPressed = true
                     downX = event.rawX
                     downY = event.rawY
                     movedBeforeLongPress = false
@@ -390,6 +414,8 @@ class PejKeyboardService : InputMethodService() {
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
+                        performKeySoundFeedback(keyView)
+                        performKeyHapticFeedback(keyView)
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
                     gestureHandler.postDelayed(
@@ -405,6 +431,7 @@ class PejKeyboardService : InputMethodService() {
                             abs(event.rawY - downY) > touchSlop
                         ) {
                             movedBeforeLongPress = true
+                            keyView.isPressed = false
                             longPressRunnable?.let(gestureHandler::removeCallbacks)
                         }
                     } else {
@@ -415,6 +442,7 @@ class PejKeyboardService : InputMethodService() {
 
                 MotionEvent.ACTION_UP -> {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    keyView.isPressed = false
 
                     if (longPressTriggered) {
                         updateSwipeSelection(event.rawX, event.rawY)
@@ -424,6 +452,8 @@ class PejKeyboardService : InputMethodService() {
                             commitCharacter(selectedCharacter)
                         }
                     } else if (!movedBeforeLongPress) {
+                        performKeySoundFeedback(keyView)
+                        performKeyHapticFeedback(keyView)
                         keyAction()
                     }
 
@@ -432,6 +462,7 @@ class PejKeyboardService : InputMethodService() {
 
                 MotionEvent.ACTION_CANCEL -> {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    keyView.isPressed = false
                     dismissAlternatePopup()
                     true
                 }
