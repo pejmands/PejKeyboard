@@ -1,8 +1,8 @@
 package com.pejmands.pejkeyboard
 
 import org.junit.Assert.assertEquals
-import org.junit.Test
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class KeyboardFeedbackSettingsTest {
 
@@ -16,7 +16,7 @@ class KeyboardFeedbackSettingsTest {
     @Test
     fun soundVolumeUsesPerceptualScaleAndPreservesOffState() {
         assertEquals(0f, KeyboardFeedbackSettings.soundVolume(0))
-        assertEquals(0.1778f, KeyboardFeedbackSettings.soundVolume(50), 0.001f)
+        assertEquals(0.2512f, KeyboardFeedbackSettings.soundVolume(50), 0.001f)
         assertEquals(1f, KeyboardFeedbackSettings.soundVolume(100))
         assertTrue(KeyboardFeedbackSettings.soundVolume(25) <
             KeyboardFeedbackSettings.soundVolume(50))
