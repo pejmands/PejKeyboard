@@ -275,8 +275,9 @@ class PejKeyboardService : InputMethodService() {
             keyLayoutParams(0.65f)
         )
 
+        val enterLabel = getEnterKeyLabel()
         row.addView(
-            createKey("↵", accentColor, Color.WHITE) {
+            createKey(enterLabel, accentColor, Color.WHITE, if (enterLabel.length > 2) 14f else 20f) {
                 handleEnter()
             },
             keyLayoutParams(1f)
@@ -946,23 +947,39 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
+    private fun getEnterKeyLabel(): String {
+        val imeOptions = currentInputEditorInfo?.imeOptions ?: return "↵"
+        if (imeOptions and EditorInfo.IME_FLAG_NO_ENTER_ACTION != 0) {
+            return "↵"
+        }
+
+        return when (imeOptions and EditorInfo.IME_MASK_ACTION) {
+            EditorInfo.IME_ACTION_GO -> "Go"
+            EditorInfo.IME_ACTION_SEARCH -> "⌕"
+            EditorInfo.IME_ACTION_SEND -> "➤"
+            EditorInfo.IME_ACTION_NEXT -> "→"
+            EditorInfo.IME_ACTION_DONE -> "✓"
+            EditorInfo.IME_ACTION_PREVIOUS -> "←"
+            else -> "↵"
+        }
+    }
+
     private fun handleEnter() {
         cancelClearTextCountdown()
-        val connection = currentInputConnection ?: return
-
-        val action = currentInputEditorInfo?.imeOptions
-            ?.and(EditorInfo.IME_MASK_ACTION)
-            ?: EditorInfo.IME_ACTION_NONE
-
-        if (action != EditorInfo.IME_ACTION_NONE &&
-            action != EditorInfo.IME_ACTION_UNSPECIFIED
-        ) {
-            if (!connection.performEditorAction(action)) {
-                connection.commitText("\n", 1)
-            }
-        } else {
-            connection.commitText("\n", 1)
+        if (currentInputConnection == null) {
+            return
         }
+
+        val imeOptions = currentInputEditorInfo?.imeOptions ?: 0
+        val action = imeOptions and EditorInfo.IME_MASK_ACTION
+
+        if (EnterKeyBehavior.shouldPerformEditorAction(imeOptions) &&
+            currentInputConnection?.performEditorAction(action) == true
+        ) {
+            return
+        }
+
+        sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
     }
 
     private fun commitKey(key: String) {
