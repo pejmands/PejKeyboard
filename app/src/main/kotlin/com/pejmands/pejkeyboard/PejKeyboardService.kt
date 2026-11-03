@@ -476,7 +476,6 @@ class PejKeyboardService : InputMethodService() {
         keyView.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    keyView.parent?.requestDisallowInterceptTouchEvent(true)
                     keyView.isPressed = true
                     downX = event.rawX
                     downY = event.rawY
@@ -486,6 +485,7 @@ class PejKeyboardService : InputMethodService() {
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
+                        keyView.parent?.requestDisallowInterceptTouchEvent(true)
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
                     gestureHandler.postDelayed(
