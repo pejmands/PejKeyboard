@@ -410,6 +410,7 @@ class PejKeyboardService : InputMethodService() {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
 
                     if (longPressTriggered) {
+                        updateSwipeSelection(event.rawX, event.rawY)
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
                         if (selectedCharacter != null) {
