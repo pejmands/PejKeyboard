@@ -19,6 +19,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.SoundEffectConstants
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.widget.HorizontalScrollView
@@ -625,9 +626,9 @@ class PejKeyboardService : InputMethodService() {
             clipToPadding = true
             addView(
                 popupContent,
-                LayoutParams(
-                    LayoutParams.WRAP_CONTENT,
-                    LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
                 )
             )
         }
