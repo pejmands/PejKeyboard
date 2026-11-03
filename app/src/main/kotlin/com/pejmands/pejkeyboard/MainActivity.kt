@@ -74,6 +74,35 @@ class MainActivity : Activity() {
         addDivider(content)
 
         content.addView(
+            createTitle(R.string.keyboard_feedback_title),
+            matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
+        )
+
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.keyboard_sound_enabled)
+            textSize = 15f
+            isChecked = KeyboardFeedbackSettings.readSoundEnabled(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(KeyboardFeedbackSettings.KEY_SOUND_ENABLED, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight())
+
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.keyboard_vibration_enabled)
+            textSize = 15f
+            isChecked = KeyboardFeedbackSettings.readVibrationEnabled(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(KeyboardFeedbackSettings.KEY_VIBRATION_ENABLED, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight())
+
+        addDivider(content)
+
+        content.addView(
             createTitle(R.string.backspace_settings_title),
             matchWidthWrapHeight().apply { bottomMargin = 8.dp() }
         )
