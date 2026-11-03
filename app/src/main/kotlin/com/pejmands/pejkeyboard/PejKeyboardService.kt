@@ -606,6 +606,10 @@ class PejKeyboardService : InputMethodService() {
         var repeatIntervalMs = BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS.toLong()
 
         keyView.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                keyView.isPressed = true
+            }
+
             if (clearTextCountdownRunnable != null &&
                 event.actionMasked == MotionEvent.ACTION_DOWN
             ) {
@@ -663,6 +667,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_UP -> {
+                    keyView.isPressed = false
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
 
@@ -671,6 +676,8 @@ class PejKeyboardService : InputMethodService() {
                     }
 
                     if (!longPressTriggered) {
+                        performKeySoundFeedback(keyView)
+                        performKeyHapticFeedback(keyView)
                         currentInputConnection?.deleteSurroundingText(1, 0)
                         lastBackspaceTapUpTime = event.eventTime
                     }
@@ -679,6 +686,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    keyView.isPressed = false
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
                     cancelClearTextCountdown()
