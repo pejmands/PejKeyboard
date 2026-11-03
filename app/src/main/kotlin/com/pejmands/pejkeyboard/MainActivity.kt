@@ -88,6 +88,17 @@ class MainActivity : Activity() {
             matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
         )
 
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.gesture_repeat_enabled)
+            textSize = 15f
+            isChecked = KeyboardGestureSettings.readRepeatEnabled(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(KeyboardGestureSettings.KEY_REPEAT_ENABLED, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight().apply { bottomMargin = 12.dp() })
+
         addGestureActionSetting(content, preferences, KeyboardGestureDirection.LEFT, R.string.gesture_direction_left)
         addGestureActionSetting(content, preferences, KeyboardGestureDirection.RIGHT, R.string.gesture_direction_right)
         addGestureActionSetting(content, preferences, KeyboardGestureDirection.UP, R.string.gesture_direction_up)
@@ -306,7 +317,6 @@ class MainActivity : Activity() {
             bottomMargin = 20.dp()
         })
     }
-
 
     private fun addSecondsSetting(
         content: LinearLayout,
