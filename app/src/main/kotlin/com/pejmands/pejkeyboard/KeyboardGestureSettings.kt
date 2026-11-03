@@ -22,6 +22,7 @@ internal enum class KeyboardGestureAction(val preferenceValue: String) {
 }
 
 internal object KeyboardGestureSettings {
+    const val KEY_REPEAT_ENABLED = "keyboard_gesture_repeat_enabled"
 
     fun readAction(
         preferences: SharedPreferences,
@@ -30,4 +31,9 @@ internal object KeyboardGestureSettings {
         KeyboardGestureAction.fromPreference(
             preferences.getString(direction.preferenceKey, null)
         )
+
+    fun isRepeatEnabled(value: Boolean?): Boolean = value ?: true
+
+    fun readRepeatEnabled(preferences: SharedPreferences): Boolean =
+        isRepeatEnabled(preferences.getBoolean(KEY_REPEAT_ENABLED, true))
 }
