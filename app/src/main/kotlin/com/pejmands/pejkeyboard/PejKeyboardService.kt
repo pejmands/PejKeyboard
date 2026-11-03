@@ -388,20 +388,12 @@ class PejKeyboardService : InputMethodService() {
             elevation = 8.dp().toFloat()
         }
 
-        val anchorLocation = IntArray(2)
-        val keyboardLocation = IntArray(2)
-        anchor.getLocationOnScreen(anchorLocation)
-        keyboard.getLocationOnScreen(keyboardLocation)
-
-        val spaceAbove = anchorLocation[1] - keyboardLocation[1]
-        val canShowAbove = spaceAbove >= popupContent.measuredHeight + 8.dp()
-        val verticalOffset = if (canShowAbove) {
+        popup.setClippingEnabled(false)
+        popup.showAsDropDown(
+            anchor,
+            0,
             -anchor.height - popupContent.measuredHeight
-        } else {
-            0
-        }
-
-        popup.showAsDropDown(anchor, 0, verticalOffset)
+        )
     }
 
     private fun handleEnter() {
