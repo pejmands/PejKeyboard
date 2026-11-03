@@ -16,7 +16,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.PopupWindow
@@ -636,6 +635,10 @@ class PejKeyboardService : InputMethodService() {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
 
+                    if (clearTextCountdownRunnable != null) {
+                        cancelClearTextCountdown()
+                    }
+
                     if (!longPressTriggered) {
                         currentInputConnection?.deleteSurroundingText(1, 0)
                         lastBackspaceTapUpTime = event.eventTime
@@ -647,6 +650,7 @@ class PejKeyboardService : InputMethodService() {
                 MotionEvent.ACTION_CANCEL -> {
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
+                    cancelClearTextCountdown()
                     longPressTriggered = false
                     true
                 }
@@ -727,22 +731,6 @@ class PejKeyboardService : InputMethodService() {
             popupContent.addView(progressBar, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 6.dp()
-            ).apply {
-                bottomMargin = 10.dp()
-            })
-
-            val cancelButton = Button(this).apply {
-                text = getString(R.string.backspace_clear_cancel)
-                textSize = 13f
-                setTextColor(Color.WHITE)
-                backgroundTintList = ColorStateList.valueOf(accentColor)
-                setOnClickListener { cancelClearTextCountdown() }
-            }
-            popupContent.addView(cancelButton, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                40.dp()
-            ).apply {
-                gravity = Gravity.CENTER
             })
 
             popupContent.measure(
