@@ -378,38 +378,37 @@ class PejKeyboardService : InputMethodService() {
         }
 
         val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
-        val level = KeyboardFeedbackSettings.readSoundLevel(preferences)
-        if (level == KeyboardFeedbackLevel.OFF) {
+        val intensity = KeyboardFeedbackSettings.readSoundIntensity(preferences)
+        if (intensity == 0) {
             return
         }
 
-        val volume = when (level) {
-            KeyboardFeedbackLevel.OFF -> 0f
-            KeyboardFeedbackLevel.LOW -> 0.25f
-            KeyboardFeedbackLevel.MEDIUM -> 0.5f
-            KeyboardFeedbackLevel.HIGH -> 1f
-        }
-        getSystemService(AudioManager::class.java)
-            ?.playSoundEffect(SoundEffectConstants.CLICK, volume)
+        getSystemService(AudioManager::class.java)?.playSoundEffect(
+            SoundEffectConstants.CLICK,
+            KeyboardFeedbackSettings.soundVolume(intensity)
+        )
     }
 
     private fun performKeyHapticFeedback() {
         val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
-        val level = KeyboardFeedbackSettings.readVibrationLevel(preferences)
-        if (level == KeyboardFeedbackLevel.OFF) {
+        val intensity = KeyboardFeedbackSettings.readVibrationIntensity(preferences)
+        if (intensity == 0) {
             return
-        }
-
-        val (durationMs, amplitude) = when (level) {
-            KeyboardFeedbackLevel.OFF -> return
-            KeyboardFeedbackLevel.LOW -> 12L to 70
-            KeyboardFeedbackLevel.MEDIUM -> 20L to 140
-            KeyboardFeedbackLevel.HIGH -> 30L to 255
         }
 
         val vibrator = getSystemService(Vibrator::class.java) ?: return
         if (vibrator.hasVibrator()) {
-            vibrator.vibrate(VibrationEffect.createOneShot(durationMs, amplitude))
+            val amplitude = if (vibrator.hasAmplitudeControl()) {
+                KeyboardFeedbackSettings.vibrationAmplitude(intensity)
+            } else {
+                VibrationEffect.DEFAULT_AMPLITUDE
+            }
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    KeyboardFeedbackSettings.vibrationDuration(intensity),
+                    amplitude
+                )
+            )
         }
     }
 
