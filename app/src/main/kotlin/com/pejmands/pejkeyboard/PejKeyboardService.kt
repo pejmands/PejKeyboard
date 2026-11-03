@@ -529,6 +529,7 @@ class PejKeyboardService : InputMethodService() {
                 setTextColor(textColor)
                 gravity = Gravity.CENTER
                 includeFontPadding = false
+                isSoundEffectsEnabled = false
                 minWidth = 44.dp()
                 minHeight = 44.dp()
 
