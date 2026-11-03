@@ -2,6 +2,7 @@ package com.pejmands.pejkeyboard
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.Assert.assertTrue
 
 class KeyboardFeedbackSettingsTest {
 
@@ -13,20 +14,30 @@ class KeyboardFeedbackSettingsTest {
     }
 
     @Test
-    fun soundVolumeTracksIntensity() {
+    fun soundVolumeUsesPerceptualScaleAndPreservesOffState() {
         assertEquals(0f, KeyboardFeedbackSettings.soundVolume(0))
-        assertEquals(0.5f, KeyboardFeedbackSettings.soundVolume(50))
+        assertEquals(0.1778f, KeyboardFeedbackSettings.soundVolume(50), 0.001f)
         assertEquals(1f, KeyboardFeedbackSettings.soundVolume(100))
+        assertTrue(KeyboardFeedbackSettings.soundVolume(25) <
+            KeyboardFeedbackSettings.soundVolume(50))
+        assertTrue(KeyboardFeedbackSettings.soundVolume(50) <
+            KeyboardFeedbackSettings.soundVolume(75))
     }
 
     @Test
-    fun vibrationIntensityIncreasesAmplitudeAndDuration() {
-        assertEquals(1, KeyboardFeedbackSettings.vibrationAmplitude(0))
+    fun vibrationAmplitudeTracksIntensityAndZeroDisablesIt() {
+        assertEquals(0, KeyboardFeedbackSettings.vibrationAmplitude(0))
         assertEquals(127, KeyboardFeedbackSettings.vibrationAmplitude(50))
         assertEquals(255, KeyboardFeedbackSettings.vibrationAmplitude(100))
-        assertEquals(8L, KeyboardFeedbackSettings.vibrationDuration(0))
-        assertEquals(19L, KeyboardFeedbackSettings.vibrationDuration(50))
-        assertEquals(30L, KeyboardFeedbackSettings.vibrationDuration(100))
+    }
+
+    @Test
+    fun vibrationDurationUsesAmplitudeWhenAvailableAndWiderFallbackOtherwise() {
+        assertEquals(0L, KeyboardFeedbackSettings.vibrationDuration(0, false))
+        assertEquals(34L, KeyboardFeedbackSettings.vibrationDuration(50, false))
+        assertEquals(60L, KeyboardFeedbackSettings.vibrationDuration(100, false))
+        assertEquals(18L, KeyboardFeedbackSettings.vibrationDuration(25, true))
+        assertEquals(18L, KeyboardFeedbackSettings.vibrationDuration(100, true))
     }
 
     @Test
