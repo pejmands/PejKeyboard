@@ -1,6 +1,7 @@
 package com.pejmands.pejkeyboard
 
 import android.content.SharedPreferences
+import kotlin.math.pow
 
 internal object KeyboardFeedbackSettings {
 
@@ -17,6 +18,12 @@ internal object KeyboardFeedbackSettings {
     const val INTENSITY_STEP = 5
     const val SOUND_DEFAULT_INTENSITY = 50
     const val VIBRATION_DEFAULT_INTENSITY = 0
+
+    private const val MIN_SOUND_LEVEL_DB = -30.0
+    private const val MAX_SOUND_LEVEL_DB = 0.0
+    private const val MIN_VIBRATION_DURATION_MS = 8L
+    private const val MAX_VIBRATION_DURATION_MS = 60L
+    private const val AMPLITUDE_CONTROLLED_VIBRATION_DURATION_MS = 18L
 
     fun readSoundIntensity(preferences: SharedPreferences): Int =
         readIntensity(
@@ -39,14 +46,36 @@ internal object KeyboardFeedbackSettings {
     fun normalizeIntensity(value: Int): Int =
         (value.coerceIn(INTENSITY_MIN, INTENSITY_MAX) / INTENSITY_STEP) * INTENSITY_STEP
 
-    fun soundVolume(intensity: Int): Float =
-        normalizeIntensity(intensity) / INTENSITY_MAX.toFloat()
+    fun soundVolume(intensity: Int): Float {
+        val normalized = normalizeIntensity(intensity)
+        if (normalized == 0) {
+            return 0f
+        }
 
-    fun vibrationAmplitude(intensity: Int): Int =
-        (normalizeIntensity(intensity) * 255 / INTENSITY_MAX).coerceAtLeast(1)
+        val decibels = MIN_SOUND_LEVEL_DB +
+            (MAX_SOUND_LEVEL_DB - MIN_SOUND_LEVEL_DB) * normalized / INTENSITY_MAX
+        return 10.0.pow(decibels / 20.0).toFloat().coerceIn(0f, 1f)
+    }
 
-    fun vibrationDuration(intensity: Int): Long =
-        8L + normalizeIntensity(intensity) * 22L / INTENSITY_MAX
+    fun vibrationAmplitude(intensity: Int): Int {
+        val normalized = normalizeIntensity(intensity)
+        return normalized * 255 / INTENSITY_MAX
+    }
+
+    fun vibrationDuration(intensity: Int, hasAmplitudeControl: Boolean): Long {
+        val normalized = normalizeIntensity(intensity)
+        if (normalized == 0) {
+            return 0L
+        }
+
+        return if (hasAmplitudeControl) {
+            AMPLITUDE_CONTROLLED_VIBRATION_DURATION_MS
+        } else {
+            MIN_VIBRATION_DURATION_MS +
+                normalized.toLong() * (MAX_VIBRATION_DURATION_MS - MIN_VIBRATION_DURATION_MS) /
+                INTENSITY_MAX
+        }
+    }
 
     private fun readIntensity(
         preferences: SharedPreferences,
