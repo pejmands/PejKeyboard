@@ -6,14 +6,22 @@ import org.junit.Test
 class KeyboardFeedbackSettingsTest {
 
     @Test
-    fun defaultsKeepSoundEnabledAndVibrationDisabled() {
-        assertEquals(true, KeyboardFeedbackSettings.SOUND_DEFAULT_ENABLED)
-        assertEquals(false, KeyboardFeedbackSettings.VIBRATION_DEFAULT_ENABLED)
+    fun feedbackLevelsHaveStablePreferenceValues() {
+        assertEquals("off", KeyboardFeedbackLevel.OFF.preferenceValue)
+        assertEquals("low", KeyboardFeedbackLevel.LOW.preferenceValue)
+        assertEquals("medium", KeyboardFeedbackLevel.MEDIUM.preferenceValue)
+        assertEquals("high", KeyboardFeedbackLevel.HIGH.preferenceValue)
     }
 
     @Test
-    fun preferenceKeysAreStable() {
-        assertEquals("keyboard_sound_enabled", KeyboardFeedbackSettings.KEY_SOUND_ENABLED)
-        assertEquals("keyboard_vibration_enabled", KeyboardFeedbackSettings.KEY_VIBRATION_ENABLED)
+    fun unknownPreferenceFallsBackToMedium() {
+        assertEquals(KeyboardFeedbackLevel.MEDIUM, KeyboardFeedbackLevel.fromPreference("unknown"))
+        assertEquals(KeyboardFeedbackLevel.MEDIUM, KeyboardFeedbackLevel.fromPreference(null))
+    }
+
+    @Test
+    fun defaultsKeepSoundAtMediumAndVibrationOff() {
+        assertEquals(KeyboardFeedbackLevel.MEDIUM, KeyboardFeedbackSettings.SOUND_DEFAULT)
+        assertEquals(KeyboardFeedbackLevel.OFF, KeyboardFeedbackSettings.VIBRATION_DEFAULT)
     }
 }
