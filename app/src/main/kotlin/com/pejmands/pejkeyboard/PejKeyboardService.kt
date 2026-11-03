@@ -336,7 +336,7 @@ class PejKeyboardService : InputMethodService() {
             isClickable = true
             isFocusable = true
 
-            isSoundEffectsEnabled = true
+            isSoundEffectsEnabled = false
 
             background = RippleDrawable(
                 ColorStateList.valueOf(
@@ -348,7 +348,7 @@ class PejKeyboardService : InputMethodService() {
             )
 
             setOnClickListener {
-                performKeyHapticFeedback()
+                performKeyFeedback()
                 action()
             }
 
@@ -357,8 +357,6 @@ class PejKeyboardService : InputMethodService() {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
                         setOnLongClickListener {
-                            performKeySoundFeedback(this)
-                            performKeyHapticFeedback()
                             showAlternatives(this, alternatives, swipeSelection = false)
                             true
                         }
@@ -372,11 +370,12 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
-    private fun performKeySoundFeedback(keyView: View) {
-        if (!keyView.isSoundEffectsEnabled) {
-            return
-        }
+    private fun performKeyFeedback() {
+        performKeySoundFeedback()
+        performKeyHapticFeedback()
+    }
 
+    private fun performKeySoundFeedback() {
         val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
         val intensity = KeyboardFeedbackSettings.readSoundIntensity(preferences)
         if (intensity == 0) {
@@ -398,14 +397,15 @@ class PejKeyboardService : InputMethodService() {
 
         val vibrator = getSystemService(Vibrator::class.java) ?: return
         if (vibrator.hasVibrator()) {
-            val amplitude = if (vibrator.hasAmplitudeControl()) {
+            val hasAmplitudeControl = vibrator.hasAmplitudeControl()
+            val amplitude = if (hasAmplitudeControl) {
                 KeyboardFeedbackSettings.vibrationAmplitude(intensity)
             } else {
                 VibrationEffect.DEFAULT_AMPLITUDE
             }
             vibrator.vibrate(
                 VibrationEffect.createOneShot(
-                    KeyboardFeedbackSettings.vibrationDuration(intensity),
+                    KeyboardFeedbackSettings.vibrationDuration(intensity, hasAmplitudeControl),
                     amplitude
                 )
             )
@@ -442,8 +442,6 @@ class PejKeyboardService : InputMethodService() {
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
-                        performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback()
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
                     gestureHandler.postDelayed(
@@ -477,11 +475,11 @@ class PejKeyboardService : InputMethodService() {
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
                         if (selectedCharacter != null) {
+                            performKeyFeedback()
                             commitCharacter(selectedCharacter)
                         }
                     } else if (!movedBeforeLongPress) {
-                        performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback()
+                        performKeyFeedback()
                         keyAction()
                     }
 
@@ -536,6 +534,7 @@ class PejKeyboardService : InputMethodService() {
 
                 if (!swipeSelection) {
                     setOnClickListener {
+                        performKeyFeedback()
                         commitCharacter(character)
                         dismissAlternatePopup()
                     }
@@ -662,6 +661,7 @@ class PejKeyboardService : InputMethodService() {
                         lastBackspaceTapUpTime = null
 
                         if (isDoubleTapHold) {
+                            performKeyFeedback()
                             val clearPreferences = getSharedPreferences(
                                 BackspaceSettings.PREFERENCES_NAME,
                                 MODE_PRIVATE
@@ -672,7 +672,9 @@ class PejKeyboardService : InputMethodService() {
                                 BackspaceSettings.readShowClearWarning(clearPreferences)
                             )
                         } else {
-                            deletePreviousWord()
+                            if (deletePreviousWord()) {
+                                performKeyFeedback()
+                            }
                             repeatRunnable = object : Runnable {
                                 override fun run() {
                                     if (!longPressTriggered || isDoubleTapHold) {
@@ -704,9 +706,9 @@ class PejKeyboardService : InputMethodService() {
                     }
 
                     if (!longPressTriggered) {
-                        performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback()
-                        currentInputConnection?.deleteSurroundingText(1, 0)
+                        if (currentInputConnection?.deleteSurroundingText(1, 0) == true) {
+                            performKeyFeedback()
+                        }
                         lastBackspaceTapUpTime = event.eventTime
                     }
 
@@ -859,14 +861,13 @@ class PejKeyboardService : InputMethodService() {
         clearTextPopup = null
     }
 
-    private fun deletePreviousWord() {
-        val connection = currentInputConnection ?: return
-        val textBeforeCursor = connection.getTextBeforeCursor(BACKSPACE_CONTEXT_LENGTH, 0) ?: return
+    private fun deletePreviousWord(): Boolean {
+        val connection = currentInputConnection ?: return false
+        val textBeforeCursor = connection.getTextBeforeCursor(BACKSPACE_CONTEXT_LENGTH, 0)
+            ?: return false
         val deleteLength = BackspaceWordDeletion.length(textBeforeCursor)
 
-        if (deleteLength > 0) {
-            connection.deleteSurroundingText(deleteLength, 0)
-        }
+        return deleteLength > 0 && connection.deleteSurroundingText(deleteLength, 0)
     }
 
     private fun deleteAllBeforeCursor() {
