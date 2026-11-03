@@ -176,7 +176,10 @@ class MainActivity : Activity() {
                     KeyboardFeedbackLevel.HIGH -> getString(R.string.feedback_level_high)
                 }
                 textSize = 13f
-                options.addView(this)
+                options.addView(
+                    this,
+                    RadioGroup.LayoutParams(0, RadioGroup.LayoutParams.WRAP_CONTENT, 1f)
+                )
             }
         }
         options.check(buttons[KeyboardFeedbackLevel.entries.indexOf(selectedLevel)].id)
