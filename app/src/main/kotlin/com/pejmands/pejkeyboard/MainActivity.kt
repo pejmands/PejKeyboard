@@ -4,12 +4,15 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 
 class MainActivity : Activity() {
@@ -70,6 +73,36 @@ class MainActivity : Activity() {
             }
         }
         content.addView(options, matchWidthWrapHeight())
+
+        addDivider(content)
+
+        content.addView(
+            createTitle(R.string.keyboard_gestures_title),
+            matchWidthWrapHeight().apply { bottomMargin = 8.dp() }
+        )
+        content.addView(
+            TextView(this).apply {
+                text = getString(R.string.keyboard_gestures_description)
+                textSize = 14f
+            },
+            matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
+        )
+
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.gesture_repeat_enabled)
+            textSize = 15f
+            isChecked = KeyboardGestureSettings.readRepeatEnabled(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(KeyboardGestureSettings.KEY_REPEAT_ENABLED, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight().apply { bottomMargin = 12.dp() })
+
+        addGestureActionSetting(content, preferences, KeyboardGestureDirection.LEFT, R.string.gesture_direction_left)
+        addGestureActionSetting(content, preferences, KeyboardGestureDirection.RIGHT, R.string.gesture_direction_right)
+        addGestureActionSetting(content, preferences, KeyboardGestureDirection.UP, R.string.gesture_direction_up)
+        addGestureActionSetting(content, preferences, KeyboardGestureDirection.DOWN, R.string.gesture_direction_down)
 
         addDivider(content)
 
@@ -148,6 +181,57 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply {
             isFillViewport = true
             addView(content)
+        })
+    }
+
+    private fun addGestureActionSetting(
+        content: LinearLayout,
+        preferences: android.content.SharedPreferences,
+        direction: KeyboardGestureDirection,
+        titleRes: Int
+    ) {
+        content.addView(
+            createTitle(titleRes, 16f),
+            matchWidthWrapHeight().apply { bottomMargin = 4.dp() }
+        )
+
+        val actions = KeyboardGestureAction.entries
+        val labels = actions.map { action ->
+            getString(
+                when (action) {
+                    KeyboardGestureAction.MOVE_CURSOR -> R.string.gesture_action_move_cursor
+                    KeyboardGestureAction.DELETE -> R.string.gesture_action_delete
+                    KeyboardGestureAction.BACKSPACE -> R.string.gesture_action_backspace
+                    KeyboardGestureAction.DISABLED -> R.string.gesture_action_disabled
+                }
+            )
+        }
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_item,
+                labels
+            ).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(actions.indexOf(KeyboardGestureSettings.readAction(preferences, direction)))
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    preferences.edit()
+                        .putString(direction.preferenceKey, actions[position].preferenceValue)
+                        .apply()
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+        }
+        content.addView(spinner, matchWidthWrapHeight().apply {
+            bottomMargin = 12.dp()
         })
     }
 
@@ -233,7 +317,6 @@ class MainActivity : Activity() {
             bottomMargin = 20.dp()
         })
     }
-
 
     private fun addSecondsSetting(
         content: LinearLayout,

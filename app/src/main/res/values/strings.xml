@@ -7,6 +7,17 @@
     <string name="alternate_selection_description">روش انتخاب نویسه‌های جایگزین هنگام نگه‌داشتن کلید را انتخاب کنید.</string>
     <string name="alternate_selection_tap">باز کردن پنجره و لمس نویسه</string>
     <string name="alternate_selection_swipe">کشیدن انگشت روی نویسه و رها کردن</string>
+    <string name="keyboard_gestures_title">ژست‌های حرکتی کیبورد</string>
+    <string name="keyboard_gestures_description">برای جابه‌جایی مکان‌نما یا حذف نویسه، انگشت را روی سطح کیبورد در یکی از چهار جهت بکشید.</string>
+    <string name="gesture_repeat_enabled">تکرار عملیات با ادامهٔ کشیدن انگشت</string>
+    <string name="gesture_direction_left">کشیدن به چپ</string>
+    <string name="gesture_direction_right">کشیدن به راست</string>
+    <string name="gesture_direction_up">کشیدن به بالا</string>
+    <string name="gesture_direction_down">کشیدن به پایین</string>
+    <string name="gesture_action_move_cursor">حرکت مکان‌نما</string>
+    <string name="gesture_action_delete">Delete</string>
+    <string name="gesture_action_backspace">Backspace</string>
+    <string name="gesture_action_disabled">غیرفعال</string>
     <string name="keyboard_feedback_title">بازخورد کلیدها</string>
     <string name="keyboard_sound_title">صدای کلیدها</string>
     <string name="keyboard_vibration_title">لرزش کلیدها</string>

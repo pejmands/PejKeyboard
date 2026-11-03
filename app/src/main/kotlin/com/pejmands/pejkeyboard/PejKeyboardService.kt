@@ -15,6 +15,7 @@ import android.media.AudioManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.SoundEffectConstants
 import android.view.View
@@ -40,7 +41,7 @@ class PejKeyboardService : InputMethodService() {
     private var clearTextPopup: PopupWindow? = null
     private var clearTextCountdownRunnable: Runnable? = null
 
-    private lateinit var keyboard: LinearLayout
+    private lateinit var keyboard: GestureKeyboardLayout
 
     private val isDarkMode: Boolean
         get() = resources.configuration.uiMode and
@@ -101,7 +102,15 @@ class PejKeyboardService : InputMethodService() {
     )
 
     override fun onCreateInputView(): View {
-        keyboard = LinearLayout(this).apply {
+        keyboard = GestureKeyboardLayout(
+            this,
+            isRepeatEnabled = {
+                val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+                KeyboardGestureSettings.readRepeatEnabled(preferences)
+            }
+        ) { direction, steps, isFirstStep ->
+            handleKeyboardGesture(direction, steps, isFirstStep)
+        }.apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_LTR
             setPadding(6.dp(), 8.dp(), 6.dp(), 8.dp())
@@ -370,6 +379,46 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
+    private fun handleKeyboardGesture(
+        direction: KeyboardGestureDirection,
+        steps: Int,
+        isFirstStep: Boolean
+    ) {
+        val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+        val action = KeyboardGestureSettings.readAction(preferences, direction)
+        if (action == KeyboardGestureAction.DISABLED || steps <= 0) {
+            return
+        }
+
+        if (isFirstStep && action != KeyboardGestureAction.MOVE_CURSOR) {
+            performKeyFeedback()
+        }
+
+        repeat(steps) {
+            when (action) {
+                KeyboardGestureAction.MOVE_CURSOR -> {
+                    val keyCode = when (direction) {
+                        KeyboardGestureDirection.LEFT -> KeyEvent.KEYCODE_DPAD_LEFT
+                        KeyboardGestureDirection.RIGHT -> KeyEvent.KEYCODE_DPAD_RIGHT
+                        KeyboardGestureDirection.UP -> KeyEvent.KEYCODE_DPAD_UP
+                        KeyboardGestureDirection.DOWN -> KeyEvent.KEYCODE_DPAD_DOWN
+                    }
+                    sendDownUpKeyEvents(keyCode)
+                }
+
+                KeyboardGestureAction.DELETE -> {
+                    currentInputConnection?.deleteSurroundingTextInCodePoints(0, 1)
+                }
+
+                KeyboardGestureAction.BACKSPACE -> {
+                    currentInputConnection?.deleteSurroundingTextInCodePoints(1, 0)
+                }
+
+                KeyboardGestureAction.DISABLED -> Unit
+            }
+        }
+    }
+
     private fun performKeyFeedback() {
         performKeySoundFeedback()
         performKeyHapticFeedback()
@@ -442,6 +491,7 @@ class PejKeyboardService : InputMethodService() {
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
+                        keyView.parent?.requestDisallowInterceptTouchEvent(true)
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
                     gestureHandler.postDelayed(
@@ -467,6 +517,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_UP -> {
+                    keyView.parent?.requestDisallowInterceptTouchEvent(false)
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     keyView.isPressed = false
 
@@ -487,6 +538,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    keyView.parent?.requestDisallowInterceptTouchEvent(false)
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     keyView.isPressed = false
                     dismissAlternatePopup()
@@ -698,6 +750,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_UP -> {
+                    keyView.parent?.requestDisallowInterceptTouchEvent(false)
                     keyView.isPressed = false
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
@@ -717,6 +770,7 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    keyView.parent?.requestDisallowInterceptTouchEvent(false)
                     keyView.isPressed = false
                     longPressRunnable?.let(gestureHandler::removeCallbacks)
                     repeatRunnable?.let(gestureHandler::removeCallbacks)
