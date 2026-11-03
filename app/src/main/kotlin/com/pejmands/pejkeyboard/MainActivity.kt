@@ -78,20 +78,20 @@ class MainActivity : Activity() {
             matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
         )
 
-        addFeedbackLevelSetting(
+        addFeedbackIntensitySetting(
             content,
             preferences,
             R.string.keyboard_sound_title,
-            KeyboardFeedbackSettings.KEY_SOUND_LEVEL,
-            KeyboardFeedbackSettings.readSoundLevel(preferences)
+            KeyboardFeedbackSettings.KEY_SOUND_INTENSITY,
+            KeyboardFeedbackSettings.readSoundIntensity(preferences)
         )
 
-        addFeedbackLevelSetting(
+        addFeedbackIntensitySetting(
             content,
             preferences,
             R.string.keyboard_vibration_title,
-            KeyboardFeedbackSettings.KEY_VIBRATION_LEVEL,
-            KeyboardFeedbackSettings.readVibrationLevel(preferences)
+            KeyboardFeedbackSettings.KEY_VIBRATION_INTENSITY,
+            KeyboardFeedbackSettings.readVibrationIntensity(preferences)
         )
 
         addDivider(content)
@@ -151,47 +151,41 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun addFeedbackLevelSetting(
+    private fun addFeedbackIntensitySetting(
         content: LinearLayout,
         preferences: android.content.SharedPreferences,
         titleRes: Int,
         preferenceKey: String,
-        selectedLevel: KeyboardFeedbackLevel
+        initialValue: Int
     ) {
         content.addView(
             createTitle(titleRes, 16f),
             matchWidthWrapHeight().apply { bottomMargin = 4.dp() }
         )
 
-        val options = RadioGroup(this).apply {
-            orientation = RadioGroup.HORIZONTAL
+        val valueLabel = TextView(this).apply {
+            text = getString(R.string.feedback_intensity_percent, initialValue)
+            textSize = 14f
         }
-        val buttons = KeyboardFeedbackLevel.entries.map { level ->
-            RadioButton(this).apply {
-                id = View.generateViewId()
-                text = when (level) {
-                    KeyboardFeedbackLevel.OFF -> getString(R.string.feedback_level_off)
-                    KeyboardFeedbackLevel.LOW -> getString(R.string.feedback_level_low)
-                    KeyboardFeedbackLevel.MEDIUM -> getString(R.string.feedback_level_medium)
-                    KeyboardFeedbackLevel.HIGH -> getString(R.string.feedback_level_high)
+        val seekBar = SeekBar(this).apply {
+            max = KeyboardFeedbackSettings.INTENSITY_MAX / KeyboardFeedbackSettings.INTENSITY_STEP
+            progress = initialValue / KeyboardFeedbackSettings.INTENSITY_STEP
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    val value = progress * KeyboardFeedbackSettings.INTENSITY_STEP
+                    valueLabel.text = getString(R.string.feedback_intensity_percent, value)
+                    preferences.edit().putInt(preferenceKey, value).apply()
                 }
-                textSize = 13f
-                options.addView(
-                    this,
-                    RadioGroup.LayoutParams(0, RadioGroup.LayoutParams.WRAP_CONTENT, 1f)
-                )
-            }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            })
         }
-        options.check(buttons[KeyboardFeedbackLevel.entries.indexOf(selectedLevel)].id)
-        options.setOnCheckedChangeListener { _, checkedId ->
-            val index = buttons.indexOfFirst { it.id == checkedId }
-            if (index >= 0) {
-                preferences.edit()
-                    .putString(preferenceKey, KeyboardFeedbackLevel.entries[index].preferenceValue)
-                    .apply()
-            }
-        }
-        content.addView(options, matchWidthWrapHeight().apply { bottomMargin = 12.dp() })
+
+        content.addView(valueLabel, matchWidthWrapHeight())
+        content.addView(seekBar, matchWidthWrapHeight().apply {
+            bottomMargin = 16.dp()
+        })
     }
 
     private fun addTimingSetting(
