@@ -11,8 +11,9 @@ import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.Gravity
-import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.SoundEffectConstants
 import android.view.View
@@ -336,7 +337,6 @@ class PejKeyboardService : InputMethodService() {
 
             val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
             isSoundEffectsEnabled = KeyboardFeedbackSettings.readSoundEnabled(preferences)
-            isHapticFeedbackEnabled = KeyboardFeedbackSettings.readVibrationEnabled(preferences)
 
             background = RippleDrawable(
                 ColorStateList.valueOf(
@@ -348,7 +348,7 @@ class PejKeyboardService : InputMethodService() {
             )
 
             setOnClickListener {
-                performKeyHapticFeedback(this)
+                performKeyHapticFeedback()
                 action()
             }
 
@@ -358,7 +358,7 @@ class PejKeyboardService : InputMethodService() {
                     AlternateSelectionMode.TAP -> {
                         setOnLongClickListener {
                             performKeySoundFeedback(this)
-                            performKeyHapticFeedback(this)
+                            performKeyHapticFeedback()
                             showAlternatives(this, alternatives, swipeSelection = false)
                             true
                         }
@@ -378,9 +378,20 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
-    private fun performKeyHapticFeedback(keyView: View) {
-        if (keyView.isHapticFeedbackEnabled) {
-            keyView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+    private fun performKeyHapticFeedback() {
+        val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+        if (!KeyboardFeedbackSettings.readVibrationEnabled(preferences)) {
+            return
+        }
+
+        val vibrator = getSystemService(Vibrator::class.java) ?: return
+        if (vibrator.hasVibrator()) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    KEY_VIBRATION_DURATION_MS,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
         }
     }
 
@@ -415,7 +426,7 @@ class PejKeyboardService : InputMethodService() {
                     longPressRunnable = Runnable {
                         longPressTriggered = true
                         performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback(keyView)
+                        performKeyHapticFeedback()
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
                     gestureHandler.postDelayed(
@@ -453,7 +464,7 @@ class PejKeyboardService : InputMethodService() {
                         }
                     } else if (!movedBeforeLongPress) {
                         performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback(keyView)
+                        performKeyHapticFeedback()
                         keyAction()
                     }
 
@@ -677,7 +688,7 @@ class PejKeyboardService : InputMethodService() {
 
                     if (!longPressTriggered) {
                         performKeySoundFeedback(keyView)
-                        performKeyHapticFeedback(keyView)
+                        performKeyHapticFeedback()
                         currentInputConnection?.deleteSurroundingText(1, 0)
                         lastBackspaceTapUpTime = event.eventTime
                     }
@@ -899,6 +910,7 @@ class PejKeyboardService : InputMethodService() {
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
         private const val CLEAR_TEXT_COUNTDOWN_UPDATE_MS = 50L
+        private const val KEY_VIBRATION_DURATION_MS = 20L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }
