@@ -19,8 +19,10 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.SoundEffectConstants
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.PopupWindow
@@ -609,25 +611,65 @@ class PejKeyboardService : InputMethodService() {
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         )
 
+        val visibleFrame = Rect()
+        anchor.getWindowVisibleDisplayFrame(visibleFrame)
+        val horizontalMargin = 8.dp()
+        val popupWidth = popupContent.measuredWidth.coerceAtMost(
+            (visibleFrame.width() - horizontalMargin * 2).coerceAtLeast(1)
+        )
+        val popupHeight = popupContent.measuredHeight
+
+        val popupContainer = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            isFillViewport = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+            clipToPadding = true
+            addView(
+                popupContent,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        popupContainer.measure(
+            View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(popupHeight, View.MeasureSpec.EXACTLY)
+        )
+
         val popup = PopupWindow(
-            popupContent,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
+            popupContainer,
+            popupWidth,
+            popupHeight,
             false
         ).apply {
             isTouchable = !swipeSelection
             isOutsideTouchable = !swipeSelection
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             elevation = 8.dp().toFloat()
+            setClippingEnabled(true)
         }
 
-        popup.setClippingEnabled(false)
-        popup.showAsDropDown(
-            anchor,
-            0,
-            -anchor.height - popupContent.measuredHeight
-        )
+        val anchorLocation = IntArray(2)
+        anchor.getLocationOnScreen(anchorLocation)
 
+        val minLeft = visibleFrame.left + horizontalMargin
+        val maxLeft = visibleFrame.right - horizontalMargin - popupWidth
+        val centeredLeft = anchorLocation[0] + (anchor.width - popupWidth) / 2
+        val popupLeft = centeredLeft.coerceIn(minLeft, maxLeft.coerceAtLeast(minLeft))
+        val xOffset = popupLeft - anchorLocation[0]
+
+        val spaceAbove = anchorLocation[1] - visibleFrame.top
+        val spaceBelow = visibleFrame.bottom - (anchorLocation[1] + anchor.height)
+        val showAbove = spaceAbove >= popupHeight || spaceAbove >= spaceBelow
+        val yOffset = if (showAbove) {
+            -anchor.height - popupHeight
+        } else {
+            0
+        }
+
+        popup.showAsDropDown(anchor, xOffset, yOffset)
         alternatePopup = popup
 
         if (swipeSelection) {
