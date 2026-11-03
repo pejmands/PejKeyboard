@@ -18,9 +18,7 @@ class PejKeyboardService : InputMethodService() {
 
     private var isPersian = true
     private var isNumberMode = false
-    private var isShifted = false
-    private var isCapsLock = false
-    private var lastShiftTapTime = 0L
+    private val shiftState = ShiftState(ViewConfiguration.getDoubleTapTimeout().toLong())
 
     private lateinit var keyboard: LinearLayout
 
@@ -79,6 +77,15 @@ class PejKeyboardService : InputMethodService() {
         return keyboard
     }
 
+    override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+        super.onStartInput(attribute, restarting)
+        shiftState.reset()
+
+        if (::keyboard.isInitialized) {
+            renderKeyboard()
+        }
+    }
+
     private fun renderKeyboard() {
         keyboard.removeAllViews()
         keyboard.setBackgroundColor(backgroundColor)
@@ -127,8 +134,8 @@ class PejKeyboardService : InputMethodService() {
             row.addView(
                 createKey(
                     "⇧",
-                    if (isShifted || isCapsLock) accentColor else specialKeyColor,
-                    if (isShifted || isCapsLock) Color.WHITE else textColor
+                    if (shiftState.isShifted || shiftState.isCapsLock) accentColor else specialKeyColor,
+                    if (shiftState.isShifted || shiftState.isCapsLock) Color.WHITE else textColor
                 ) {
                     handleShift()
                 },
@@ -171,9 +178,7 @@ class PejKeyboardService : InputMethodService() {
         row.addView(
             createKey(if (isNumberMode) "ABC" else "123", specialKeyColor) {
                 isNumberMode = !isNumberMode
-                isShifted = false
-                isCapsLock = false
-                lastShiftTapTime = 0L
+                shiftState.reset()
                 renderKeyboard()
             },
             keyLayoutParams(1f)
@@ -236,7 +241,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun getDisplayKey(key: String): String {
-        return if (!isPersian && !isNumberMode && (isShifted || isCapsLock)) {
+        return if (!isPersian && !isNumberMode && (shiftState.isShifted || shiftState.isCapsLock)) {
             key.uppercase()
         } else {
             key
@@ -246,35 +251,13 @@ class PejKeyboardService : InputMethodService() {
     private fun commitCharacter(key: String) {
         commitKey(key)
 
-        if (isShifted && !isCapsLock) {
-            isShifted = false
-            lastShiftTapTime = 0L
+        if (shiftState.onCharacterCommitted()) {
             renderKeyboard()
         }
     }
 
     private fun handleShift() {
-        val now = SystemClock.uptimeMillis()
-        val doubleTap = isShifted &&
-                now - lastShiftTapTime <= ViewConfiguration.getDoubleTapTimeout()
-
-        when {
-            isCapsLock -> {
-                isCapsLock = false
-                isShifted = false
-            }
-
-            doubleTap -> {
-                isCapsLock = true
-                isShifted = true
-            }
-
-            else -> {
-                isShifted = true
-            }
-        }
-
-        lastShiftTapTime = if (isShifted) now else 0L
+        shiftState.onShiftTap(SystemClock.uptimeMillis())
         renderKeyboard()
     }
 
