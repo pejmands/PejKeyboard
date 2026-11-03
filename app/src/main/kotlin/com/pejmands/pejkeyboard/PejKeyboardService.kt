@@ -298,10 +298,8 @@ class PejKeyboardService : InputMethodService() {
 
             background = RippleDrawable(
                 ColorStateList.valueOf(
-                    ColorStateList.valueOf(
-                        if (isDarkMode) Color.rgb(190, 198, 212)
-                        else Color.rgb(70, 82, 105)
-                    ).defaultColor
+                    if (isDarkMode) Color.rgb(190, 198, 212)
+                    else Color.rgb(70, 82, 105)
                 ),
                 shape,
                 mask
