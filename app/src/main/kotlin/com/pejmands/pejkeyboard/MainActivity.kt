@@ -78,27 +78,21 @@ class MainActivity : Activity() {
             matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
         )
 
-        content.addView(CheckBox(this).apply {
-            text = getString(R.string.keyboard_sound_enabled)
-            textSize = 15f
-            isChecked = KeyboardFeedbackSettings.readSoundEnabled(preferences)
-            setOnCheckedChangeListener { _, isChecked ->
-                preferences.edit()
-                    .putBoolean(KeyboardFeedbackSettings.KEY_SOUND_ENABLED, isChecked)
-                    .apply()
-            }
-        }, matchWidthWrapHeight())
+        addFeedbackLevelSetting(
+            content,
+            preferences,
+            R.string.keyboard_sound_title,
+            KeyboardFeedbackSettings.KEY_SOUND_LEVEL,
+            KeyboardFeedbackSettings.readSoundLevel(preferences)
+        )
 
-        content.addView(CheckBox(this).apply {
-            text = getString(R.string.keyboard_vibration_enabled)
-            textSize = 15f
-            isChecked = KeyboardFeedbackSettings.readVibrationEnabled(preferences)
-            setOnCheckedChangeListener { _, isChecked ->
-                preferences.edit()
-                    .putBoolean(KeyboardFeedbackSettings.KEY_VIBRATION_ENABLED, isChecked)
-                    .apply()
-            }
-        }, matchWidthWrapHeight())
+        addFeedbackLevelSetting(
+            content,
+            preferences,
+            R.string.keyboard_vibration_title,
+            KeyboardFeedbackSettings.KEY_VIBRATION_LEVEL,
+            KeyboardFeedbackSettings.readVibrationLevel(preferences)
+        )
 
         addDivider(content)
 
@@ -155,6 +149,46 @@ class MainActivity : Activity() {
             isFillViewport = true
             addView(content)
         })
+    }
+
+    private fun addFeedbackLevelSetting(
+        content: LinearLayout,
+        preferences: android.content.SharedPreferences,
+        titleRes: Int,
+        preferenceKey: String,
+        selectedLevel: KeyboardFeedbackLevel
+    ) {
+        content.addView(
+            createTitle(titleRes, 16f),
+            matchWidthWrapHeight().apply { bottomMargin = 4.dp() }
+        )
+
+        val options = RadioGroup(this).apply {
+            orientation = RadioGroup.HORIZONTAL
+        }
+        val buttons = KeyboardFeedbackLevel.entries.map { level ->
+            RadioButton(this).apply {
+                id = View.generateViewId()
+                text = when (level) {
+                    KeyboardFeedbackLevel.OFF -> getString(R.string.feedback_level_off)
+                    KeyboardFeedbackLevel.LOW -> getString(R.string.feedback_level_low)
+                    KeyboardFeedbackLevel.MEDIUM -> getString(R.string.feedback_level_medium)
+                    KeyboardFeedbackLevel.HIGH -> getString(R.string.feedback_level_high)
+                }
+                textSize = 13f
+                options.addView(this)
+            }
+        }
+        options.check(buttons[KeyboardFeedbackLevel.entries.indexOf(selectedLevel)].id)
+        options.setOnCheckedChangeListener { _, checkedId ->
+            val index = buttons.indexOfFirst { it.id == checkedId }
+            if (index >= 0) {
+                preferences.edit()
+                    .putString(preferenceKey, KeyboardFeedbackLevel.entries[index].preferenceValue)
+                    .apply()
+            }
+        }
+        content.addView(options, matchWidthWrapHeight().apply { bottomMargin = 12.dp() })
     }
 
     private fun addTimingSetting(
