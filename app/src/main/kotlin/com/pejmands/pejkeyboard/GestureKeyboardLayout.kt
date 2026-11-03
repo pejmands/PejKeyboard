@@ -89,6 +89,7 @@ internal class GestureKeyboardLayout(
         if (direction != lastDirection) {
             lastDirection = direction
             lastStepCount = 0
+            feedbackSent = false
         }
 
         val newSteps = stepCount - lastStepCount
