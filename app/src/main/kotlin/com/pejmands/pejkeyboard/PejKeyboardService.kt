@@ -494,7 +494,7 @@ class PejKeyboardService : InputMethodService() {
             popupContent,
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-            !swipeSelection
+            false
         ).apply {
             isTouchable = !swipeSelection
             isOutsideTouchable = !swipeSelection
