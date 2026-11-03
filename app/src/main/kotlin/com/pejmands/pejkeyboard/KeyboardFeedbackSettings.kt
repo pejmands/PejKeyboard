@@ -19,7 +19,7 @@ internal object KeyboardFeedbackSettings {
     const val SOUND_DEFAULT_INTENSITY = 50
     const val VIBRATION_DEFAULT_INTENSITY = 0
 
-    private const val MIN_SOUND_LEVEL_DB = -30.0
+    private const val MIN_SOUND_LEVEL_DB = -24.0
     private const val MAX_SOUND_LEVEL_DB = 0.0
     private const val MIN_VIBRATION_DURATION_MS = 8L
     private const val MAX_VIBRATION_DURATION_MS = 60L
