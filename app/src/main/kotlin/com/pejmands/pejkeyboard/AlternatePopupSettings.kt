@@ -6,7 +6,7 @@ internal object AlternatePopupSettings {
 
     const val KEY_HOLD_DURATION_MS = "alternate_popup_hold_duration_ms"
 
-    const val HOLD_DURATION_MIN_MS = 300
+    const val HOLD_DURATION_MIN_MS = 200
     const val HOLD_DURATION_MAX_MS = 1000
     const val HOLD_DURATION_STEP_MS = 50
     const val HOLD_DURATION_DEFAULT_MS = 500
