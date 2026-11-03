@@ -681,7 +681,6 @@ class PejKeyboardService : InputMethodService() {
 
         keyView.setOnTouchListener { _, event ->
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                keyView.parent?.requestDisallowInterceptTouchEvent(true)
                 keyView.isPressed = true
             }
 
