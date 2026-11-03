@@ -381,6 +381,14 @@ class PejKeyboardService : InputMethodService() {
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
+            if (clearTextCountdownRunnable != null &&
+                event.actionMasked == MotionEvent.ACTION_DOWN
+            ) {
+                cancelClearTextCountdown()
+                longPressTriggered = true
+                return@setOnTouchListener true
+            }
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downX = event.rawX
@@ -823,6 +831,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun handleEnter() {
+        cancelClearTextCountdown()
         val connection = currentInputConnection ?: return
 
         val action = currentInputEditorInfo?.imeOptions
@@ -841,6 +850,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun commitKey(key: String) {
+        cancelClearTextCountdown()
         currentInputConnection?.commitText(key, 1)
     }
 
