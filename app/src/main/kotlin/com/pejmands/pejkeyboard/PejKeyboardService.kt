@@ -368,10 +368,7 @@ class PejKeyboardService : InputMethodService() {
             if (!alternatives.isNullOrEmpty()) {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
-                        setOnLongClickListener {
-                            showAlternatives(this, alternatives, swipeSelection = false)
-                            true
-                        }
+                        installTapSelection(this, alternatives, action)
                     }
 
                     AlternateSelectionMode.SWIPE -> {
@@ -470,6 +467,77 @@ class PejKeyboardService : InputMethodService() {
         return AlternateSelectionMode.fromPreference(value)
     }
 
+    private fun installTapSelection(
+        keyView: View,
+        alternatives: List<String>,
+        keyAction: () -> Unit
+    ) {
+        val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var movedBeforeLongPress = false
+        var longPressTriggered = false
+        var longPressRunnable: Runnable? = null
+
+        keyView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    keyView.isPressed = true
+                    downX = event.rawX
+                    downY = event.rawY
+                    movedBeforeLongPress = false
+                    longPressTriggered = false
+
+                    val preferences = getSharedPreferences(
+                        BackspaceSettings.PREFERENCES_NAME,
+                        MODE_PRIVATE
+                    )
+                    val holdDurationMs = AlternatePopupSettings.readHoldDuration(preferences)
+                    longPressRunnable = Runnable {
+                        longPressTriggered = true
+                        showAlternatives(keyView, alternatives, swipeSelection = false)
+                    }
+                    gestureHandler.postDelayed(longPressRunnable!!, holdDurationMs.toLong())
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (!longPressTriggered &&
+                        (abs(event.rawX - downX) > touchSlop ||
+                            abs(event.rawY - downY) > touchSlop)
+                    ) {
+                        movedBeforeLongPress = true
+                        keyView.isPressed = false
+                        longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    keyView.isPressed = false
+
+                    if (!longPressTriggered && !movedBeforeLongPress) {
+                        performKeyFeedback()
+                        keyAction()
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    keyView.isPressed = false
+                    if (longPressTriggered) {
+                        dismissAlternatePopup()
+                    }
+                    true
+                }
+
+                else -> true
+            }
+        }
+    }
+
     private fun installSwipeSelection(
         keyView: View,
         alternatives: List<String>,
@@ -497,10 +565,12 @@ class PejKeyboardService : InputMethodService() {
                         keyView.parent?.requestDisallowInterceptTouchEvent(true)
                         showAlternatives(keyView, alternatives, swipeSelection = true)
                     }
-                    gestureHandler.postDelayed(
-                        longPressRunnable!!,
-                        ViewConfiguration.getLongPressTimeout().toLong()
+                    val preferences = getSharedPreferences(
+                        BackspaceSettings.PREFERENCES_NAME,
+                        MODE_PRIVATE
                     )
+                    val holdDurationMs = AlternatePopupSettings.readHoldDuration(preferences)
+                    gestureHandler.postDelayed(longPressRunnable!!, holdDurationMs.toLong())
                     true
                 }
 
