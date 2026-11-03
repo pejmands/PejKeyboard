@@ -6,34 +6,111 @@ import android.view.ViewConfiguration
 import android.widget.LinearLayout
 import kotlin.math.abs
 
+internal data class GestureUpdate(
+    val direction: KeyboardGestureDirection,
+    val steps: Int,
+    val directionChanged: Boolean
+)
+
+internal class GestureDirectionTracker(
+    private val touchSlop: Float,
+    private val stepDistance: Float
+) {
+    private var currentDirection: KeyboardGestureDirection? = null
+    private var pendingDirection: KeyboardGestureDirection? = null
+    private var pendingDistance = 0f
+    private var directionDistance = 0f
+    private var lastStepCount = 0
+
+    fun reset() {
+        currentDirection = null
+        pendingDirection = null
+        pendingDistance = 0f
+        directionDistance = 0f
+        lastStepCount = 0
+    }
+
+    fun addMovement(deltaX: Float, deltaY: Float): GestureUpdate? {
+        if (deltaX == 0f && deltaY == 0f) {
+            return null
+        }
+
+        val candidate = if (abs(deltaX) >= abs(deltaY)) {
+            if (deltaX < 0f) KeyboardGestureDirection.LEFT else KeyboardGestureDirection.RIGHT
+        } else {
+            if (deltaY < 0f) KeyboardGestureDirection.UP else KeyboardGestureDirection.DOWN
+        }
+        val movementDistance = if (
+            candidate == KeyboardGestureDirection.LEFT ||
+            candidate == KeyboardGestureDirection.RIGHT
+        ) {
+            abs(deltaX)
+        } else {
+            abs(deltaY)
+        }
+
+        val directionChanged = candidate != currentDirection
+        if (directionChanged) {
+            if (candidate != pendingDirection) {
+                pendingDirection = candidate
+                pendingDistance = 0f
+            }
+            pendingDistance += movementDistance
+            if (pendingDistance <= touchSlop) {
+                return null
+            }
+
+            currentDirection = candidate
+            directionDistance = pendingDistance
+            pendingDirection = null
+            pendingDistance = 0f
+            lastStepCount = 0
+        } else {
+            pendingDirection = null
+            pendingDistance = 0f
+            directionDistance += movementDistance
+        }
+
+        val stepCount = (directionDistance / stepDistance).toInt()
+        val newSteps = stepCount - lastStepCount
+        if (newSteps > 0) {
+            lastStepCount = stepCount
+        }
+
+        return if (directionChanged || newSteps > 0) {
+            GestureUpdate(candidate, newSteps, directionChanged)
+        } else {
+            null
+        }
+    }
+}
+
 internal class GestureKeyboardLayout(
     context: Context,
     private val isRepeatEnabled: () -> Boolean,
     private val onGesture: (KeyboardGestureDirection, Int, Boolean) -> Unit
 ) : LinearLayout(context) {
 
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private val stepDistance = maxOf(
-        touchSlop * 2,
-        (32f * resources.displayMetrics.density).toInt()
-    ).toFloat()
+        touchSlop * 2f,
+        32f * resources.displayMetrics.density
+    )
+    private val directionTracker = GestureDirectionTracker(touchSlop, stepDistance)
 
-    private var downX = 0f
-    private var downY = 0f
+    private var lastX = 0f
+    private var lastY = 0f
     private var gestureStarted = false
-    private var lastDirection: KeyboardGestureDirection? = null
-    private var lastStepCount = 0
     private var feedbackSent = false
     private var actionDispatched = false
 
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                downX = event.x
-                downY = event.y
+                lastX = event.x
+                lastY = event.y
                 gestureStarted = false
-                lastDirection = null
-                lastStepCount = 0
+                directionTracker.reset()
                 feedbackSent = false
                 actionDispatched = false
                 return false
@@ -41,7 +118,7 @@ internal class GestureKeyboardLayout(
 
             MotionEvent.ACTION_MOVE -> {
                 if (!gestureStarted &&
-                    (abs(event.x - downX) > touchSlop || abs(event.y - downY) > touchSlop)
+                    (abs(event.x - lastX) > touchSlop || abs(event.y - lastY) > touchSlop)
                 ) {
                     gestureStarted = true
                     return true
@@ -60,7 +137,10 @@ internal class GestureKeyboardLayout(
         when (event.actionMasked) {
             MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
                 if (gestureStarted) {
-                    dispatchGesture(event.x, event.y)
+                    dispatchMovement(event.x, event.y)
+                } else {
+                    lastX = event.x
+                    lastY = event.y
                 }
                 if (event.actionMasked == MotionEvent.ACTION_UP) {
                     resetGesture()
@@ -72,49 +152,35 @@ internal class GestureKeyboardLayout(
         return true
     }
 
-    private fun dispatchGesture(x: Float, y: Float) {
-        val deltaX = x - downX
-        val deltaY = y - downY
-        val direction = if (abs(deltaX) >= abs(deltaY)) {
-            if (deltaX < 0f) KeyboardGestureDirection.LEFT else KeyboardGestureDirection.RIGHT
-        } else {
-            if (deltaY < 0f) KeyboardGestureDirection.UP else KeyboardGestureDirection.DOWN
+    private fun dispatchMovement(x: Float, y: Float) {
+        val update = directionTracker.addMovement(x - lastX, y - lastY)
+        lastX = x
+        lastY = y
+        if (update == null) {
+            return
         }
-        val distance = if (direction == KeyboardGestureDirection.LEFT ||
-            direction == KeyboardGestureDirection.RIGHT
-        ) {
-            abs(deltaX)
-        } else {
-            abs(deltaY)
+
+        if (update.directionChanged) {
+            feedbackSent = false
         }
-        val stepCount = (distance / stepDistance).toInt()
 
         if (!isRepeatEnabled()) {
-            if (stepCount > 0 && !actionDispatched) {
-                onGesture(direction, 1, true)
+            if (update.steps > 0 && !actionDispatched) {
+                onGesture(update.direction, 1, true)
                 actionDispatched = true
             }
             return
         }
 
-        if (direction != lastDirection) {
-            lastDirection = direction
-            lastStepCount = 0
-            feedbackSent = false
-        }
-
-        val newSteps = stepCount - lastStepCount
-        if (newSteps > 0) {
-            onGesture(direction, newSteps, !feedbackSent)
+        if (update.steps > 0) {
+            onGesture(update.direction, update.steps, !feedbackSent)
             feedbackSent = true
-            lastStepCount = stepCount
         }
     }
 
     private fun resetGesture() {
         gestureStarted = false
-        lastDirection = null
-        lastStepCount = 0
+        directionTracker.reset()
         feedbackSent = false
         actionDispatched = false
     }
