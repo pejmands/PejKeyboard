@@ -731,7 +731,7 @@ class PejKeyboardService : InputMethodService() {
             popupContent.addView(progressBar, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 6.dp()
-            })
+            ))
 
             popupContent.measure(
                 View.MeasureSpec.makeMeasureSpec(260.dp(), View.MeasureSpec.EXACTLY),
