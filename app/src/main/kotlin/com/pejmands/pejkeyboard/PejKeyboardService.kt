@@ -28,24 +28,28 @@ class PejKeyboardService : InputMethodService() {
                 Configuration.UI_MODE_NIGHT_YES
 
     private val backgroundColor: Int
-        get() = if (isDarkMode) Color.rgb(30, 32, 36)
-        else Color.rgb(225, 228, 234)
+        get() = if (isDarkMode) Color.rgb(31, 34, 40)
+        else Color.rgb(237, 240, 245)
 
     private val keyColor: Int
-        get() = if (isDarkMode) Color.rgb(57, 60, 67)
-        else Color.rgb(250, 250, 252)
+        get() = if (isDarkMode) Color.rgb(54, 58, 67)
+        else Color.rgb(252, 252, 254)
 
     private val specialKeyColor: Int
-        get() = if (isDarkMode) Color.rgb(76, 80, 89)
-        else Color.rgb(207, 212, 221)
+        get() = if (isDarkMode) Color.rgb(73, 79, 90)
+        else Color.rgb(218, 224, 234)
 
     private val accentColor: Int
-        get() = if (isDarkMode) Color.rgb(105, 153, 235)
-        else Color.rgb(48, 105, 190)
+        get() = if (isDarkMode) Color.rgb(111, 157, 239)
+        else Color.rgb(53, 105, 194)
 
     private val textColor: Int
-        get() = if (isDarkMode) Color.rgb(245, 246, 248)
-        else Color.rgb(35, 38, 44)
+        get() = if (isDarkMode) Color.rgb(245, 247, 250)
+        else Color.rgb(39, 43, 51)
+
+    private val keyBorderColor: Int
+        get() = if (isDarkMode) Color.rgb(75, 81, 92)
+        else Color.rgb(216, 221, 230)
 
     private val persianRows = listOf(
         listOf("ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج"),
@@ -69,7 +73,7 @@ class PejKeyboardService : InputMethodService() {
         keyboard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_LTR
-            setPadding(5.dp(), 8.dp(), 5.dp(), 8.dp())
+            setPadding(6.dp(), 8.dp(), 6.dp(), 8.dp())
             setBackgroundColor(backgroundColor)
         }
 
@@ -122,7 +126,7 @@ class PejKeyboardService : InputMethodService() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 48.dp()
             ).apply {
-                bottomMargin = 7.dp()
+                bottomMargin = 8.dp()
             }
         )
     }
@@ -274,12 +278,13 @@ class PejKeyboardService : InputMethodService() {
     ): TextView {
         val shape = GradientDrawable().apply {
             setColor(color)
-            cornerRadius = 8.dp().toFloat()
+            cornerRadius = 10.dp().toFloat()
+            setStroke(1.dp(), keyBorderColor)
         }
 
         val mask = GradientDrawable().apply {
             setColor(Color.WHITE)
-            cornerRadius = 8.dp().toFloat()
+            cornerRadius = 10.dp().toFloat()
         }
 
         return TextView(this).apply {
@@ -287,12 +292,14 @@ class PejKeyboardService : InputMethodService() {
             textSize = size
             setTextColor(foregroundColor)
             gravity = Gravity.CENTER
+            includeFontPadding = false
             isClickable = true
             isFocusable = true
 
             background = RippleDrawable(
                 ColorStateList.valueOf(
-                    if (isDarkMode) Color.LTGRAY else Color.DKGRAY
+                    if (isDarkMode) Color.rgb(190, 198, 212)
+                    else Color.rgb(70, 82, 105)
                 ),
                 shape,
                 mask
