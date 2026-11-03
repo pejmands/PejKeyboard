@@ -3,6 +3,7 @@ package com.pejmands.pejkeyboard
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.inputmethodservice.InputMethodService
@@ -10,6 +11,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.os.SystemClock
 import android.view.ViewConfiguration
 import android.widget.TextView
@@ -61,6 +63,17 @@ class PejKeyboardService : InputMethodService() {
         listOf("p", "o", "i", "u", "y", "t", "r", "e", "w", "q"),
         listOf("l", "k", "j", "h", "g", "f", "d", "s", "a"),
         listOf("m", "n", "b", "v", "c", "x", "z")
+    )
+
+    private val alternateCharacters = mapOf(
+        "ا" to listOf("آ", "أ", "إ"),
+        "ه" to listOf("ة", "ۀ"),
+        "ی" to listOf("ي", "ى", "ئ"),
+        "ک" to listOf("ك"),
+        "و" to listOf("ؤ"),
+        "," to listOf("،", "؛", "…"),
+        "." to listOf("؟", "!", "؛", "…"),
+        "◂⁞▸" to listOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     )
 
     private val numberRows = listOf(
@@ -306,7 +319,81 @@ class PejKeyboardService : InputMethodService() {
             )
 
             setOnClickListener { action() }
+
+            val alternatives = alternateCharacters[label.lowercase()]
+            if (!alternatives.isNullOrEmpty()) {
+                setOnLongClickListener {
+                    showAlternatives(this, alternatives)
+                    true
+                }
+            }
         }
+    }
+
+    private fun showAlternatives(anchor: View, alternatives: List<String>) {
+        val popupContent = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(6.dp(), 6.dp(), 6.dp(), 6.dp())
+            background = GradientDrawable().apply {
+                setColor(specialKeyColor)
+                cornerRadius = 12.dp().toFloat()
+                setStroke(1.dp(), keyBorderColor)
+            }
+        }
+
+        lateinit var popup: PopupWindow
+
+        alternatives.forEach { character ->
+            val displayCharacter = if (character in listOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")) {
+                "◌$character"
+            } else {
+                character
+            }
+
+            popupContent.addView(
+                TextView(this).apply {
+                    text = displayCharacter
+                    textSize = 20f
+                    setTextColor(textColor)
+                    gravity = Gravity.CENTER
+                    includeFontPadding = false
+                    minWidth = 44.dp()
+                    minHeight = 44.dp()
+                    setOnClickListener {
+                        commitCharacter(character)
+                        popup.dismiss()
+                    }
+                },
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    48.dp()
+                )
+            )
+        }
+
+        popupContent.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+
+        popup = PopupWindow(
+            popupContent,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            isOutsideTouchable = true
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            elevation = 8.dp().toFloat()
+        }
+
+        popup.setClippingEnabled(false)
+        popup.showAsDropDown(
+            anchor,
+            0,
+            -anchor.height - popupContent.measuredHeight
+        )
     }
 
     private fun handleEnter() {
