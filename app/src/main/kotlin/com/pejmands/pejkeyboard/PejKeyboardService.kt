@@ -948,21 +948,20 @@ class PejKeyboardService : InputMethodService() {
 
     private fun handleEnter() {
         cancelClearTextCountdown()
-        val connection = currentInputConnection ?: return
-
-        val action = currentInputEditorInfo?.imeOptions
-            ?.and(EditorInfo.IME_MASK_ACTION)
-            ?: EditorInfo.IME_ACTION_NONE
-
-        if (action != EditorInfo.IME_ACTION_NONE &&
-            action != EditorInfo.IME_ACTION_UNSPECIFIED
-        ) {
-            if (!connection.performEditorAction(action)) {
-                connection.commitText("\n", 1)
-            }
-        } else {
-            connection.commitText("\n", 1)
+        if (currentInputConnection == null) {
+            return
         }
+
+        val imeOptions = currentInputEditorInfo?.imeOptions ?: 0
+        val action = imeOptions and EditorInfo.IME_MASK_ACTION
+
+        if (EnterKeyBehavior.shouldPerformEditorAction(imeOptions) &&
+            currentInputConnection?.performEditorAction(action) == true
+        ) {
+            return
+        }
+
+        sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
     }
 
     private fun commitKey(key: String) {
