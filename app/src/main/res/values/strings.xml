@@ -10,10 +10,7 @@
     <string name="keyboard_feedback_title">بازخورد کلیدها</string>
     <string name="keyboard_sound_title">صدای کلیدها</string>
     <string name="keyboard_vibration_title">لرزش کلیدها</string>
-    <string name="feedback_level_off">خاموش</string>
-    <string name="feedback_level_low">کم</string>
-    <string name="feedback_level_medium">متوسط</string>
-    <string name="feedback_level_high">زیاد</string>
+    <string name="feedback_intensity_percent">%1$d٪</string>
     <string name="backspace_settings_title">تنظیمات پس‌بر</string>
     <string name="backspace_settings_description">زمان‌بندی حذف نویسه و کلمه را مطابق سلیقهٔ خود تنظیم کنید.</string>
     <string name="backspace_hold_duration_title">مدت نگه‌داشتن برای شروع حذف کلمه</string>
