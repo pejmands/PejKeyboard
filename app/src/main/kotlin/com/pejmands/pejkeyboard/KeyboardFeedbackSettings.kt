@@ -9,8 +9,11 @@ internal enum class KeyboardFeedbackLevel(val preferenceValue: String) {
     HIGH("high");
 
     companion object {
-        fun fromPreference(value: String?): KeyboardFeedbackLevel =
-            entries.firstOrNull { it.preferenceValue == value } ?: MEDIUM
+        fun fromPreference(
+            value: String?,
+            fallback: KeyboardFeedbackLevel = MEDIUM
+        ): KeyboardFeedbackLevel =
+            entries.firstOrNull { it.preferenceValue == value } ?: fallback
     }
 }
 
@@ -38,7 +41,7 @@ internal object KeyboardFeedbackSettings {
         legacyKey: String
     ): KeyboardFeedbackLevel {
         if (preferences.contains(key)) {
-            return KeyboardFeedbackLevel.fromPreference(preferences.getString(key, null))
+            return KeyboardFeedbackLevel.fromPreference(preferences.getString(key, null), default)
         }
 
         if (preferences.contains(legacyKey)) {
