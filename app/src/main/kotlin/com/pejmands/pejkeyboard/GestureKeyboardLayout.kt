@@ -8,6 +8,7 @@ import kotlin.math.abs
 
 internal class GestureKeyboardLayout(
     context: Context,
+    private val isRepeatEnabled: () -> Boolean,
     private val onGesture: (KeyboardGestureDirection, Int, Boolean) -> Unit
 ) : LinearLayout(context) {
 
@@ -23,6 +24,7 @@ internal class GestureKeyboardLayout(
     private var lastDirection: KeyboardGestureDirection? = null
     private var lastStepCount = 0
     private var feedbackSent = false
+    private var actionDispatched = false
 
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
@@ -33,6 +35,7 @@ internal class GestureKeyboardLayout(
                 lastDirection = null
                 lastStepCount = 0
                 feedbackSent = false
+                actionDispatched = false
                 return false
             }
 
@@ -86,6 +89,14 @@ internal class GestureKeyboardLayout(
         }
         val stepCount = (distance / stepDistance).toInt()
 
+        if (!isRepeatEnabled()) {
+            if (stepCount > 0 && !actionDispatched) {
+                onGesture(direction, 1, true)
+                actionDispatched = true
+            }
+            return
+        }
+
         if (direction != lastDirection) {
             lastDirection = direction
             lastStepCount = 0
@@ -105,5 +116,6 @@ internal class GestureKeyboardLayout(
         lastDirection = null
         lastStepCount = 0
         feedbackSent = false
+        actionDispatched = false
     }
 }
