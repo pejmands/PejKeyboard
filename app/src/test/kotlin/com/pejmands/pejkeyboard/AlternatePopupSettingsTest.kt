@@ -15,6 +15,10 @@ class AlternatePopupSettingsTest {
             AlternatePopupSettings.HOLD_DURATION_MAX_MS,
             AlternatePopupSettings.normalizeHoldDuration(Int.MAX_VALUE)
         )
+        assertEquals(
+            200,
+            AlternatePopupSettings.normalizeHoldDuration(200)
+        )
     }
 
     @Test
