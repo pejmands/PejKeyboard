@@ -3,24 +3,34 @@ package com.pejmands.pejkeyboard
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.inputmethodservice.InputMethodService
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import android.widget.PopupWindow
-import android.os.SystemClock
-import android.view.ViewConfiguration
 import android.widget.TextView
+import kotlin.math.abs
 
 class PejKeyboardService : InputMethodService() {
 
     private var isPersian = true
     private var isNumberMode = false
     private val shiftState = ShiftState(ViewConfiguration.getDoubleTapTimeout().toLong())
+    private val gestureHandler = Handler(Looper.getMainLooper())
+
+    private var alternatePopup: PopupWindow? = null
+    private var alternatePopupOptions: List<TextView> = emptyList()
+    private var selectedAlternateIndex = -1
 
     private lateinit var keyboard: LinearLayout
 
@@ -79,7 +89,7 @@ class PejKeyboardService : InputMethodService() {
     private val numberRows = listOf(
         listOf("۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"),
         listOf("@", "#", "$", "%", "&", "-", "+", "(", ")", "/"),
-        listOf("*", "\"", "'", ":", ";", "!", "؟", "=", "_", "،")
+        listOf("*", "\" ", "'", ":", ";", "!", "؟", "=", "_", "،")
     )
 
     override fun onCreateInputView(): View {
@@ -97,10 +107,16 @@ class PejKeyboardService : InputMethodService() {
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         shiftState.reset()
+        dismissAlternatePopup()
 
         if (::keyboard.isInitialized) {
             renderKeyboard()
         }
+    }
+
+    override fun onFinishInput() {
+        dismissAlternatePopup()
+        super.onFinishInput()
     }
 
     private fun renderKeyboard() {
@@ -322,15 +338,108 @@ class PejKeyboardService : InputMethodService() {
 
             val alternatives = alternateCharacters[label.lowercase()]
             if (!alternatives.isNullOrEmpty()) {
-                setOnLongClickListener {
-                    showAlternatives(this, alternatives)
-                    true
+                when (getAlternateSelectionMode()) {
+                    AlternateSelectionMode.TAP -> {
+                        setOnLongClickListener {
+                            showAlternatives(this, alternatives, swipeSelection = false)
+                            true
+                        }
+                    }
+
+                    AlternateSelectionMode.SWIPE -> {
+                        installSwipeSelection(this, alternatives, action)
+                    }
                 }
             }
         }
     }
 
-    private fun showAlternatives(anchor: View, alternatives: List<String>) {
+    private fun getAlternateSelectionMode(): AlternateSelectionMode {
+        val value = getSharedPreferences(SETTINGS_PREFERENCES, MODE_PRIVATE)
+            .getString(KEY_ALTERNATE_SELECTION_MODE, AlternateSelectionMode.TAP.preferenceValue)
+        return AlternateSelectionMode.fromPreference(value)
+    }
+
+    private fun installSwipeSelection(
+        keyView: View,
+        alternatives: List<String>,
+        keyAction: () -> Unit
+    ) {
+        val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var movedBeforeLongPress = false
+        var longPressTriggered = false
+        var longPressRunnable: Runnable? = null
+
+        keyView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.rawX
+                    downY = event.rawY
+                    movedBeforeLongPress = false
+                    longPressTriggered = false
+                    selectedAlternateIndex = -1
+
+                    longPressRunnable = Runnable {
+                        longPressTriggered = true
+                        showAlternatives(keyView, alternatives, swipeSelection = true)
+                    }
+                    gestureHandler.postDelayed(
+                        longPressRunnable!!,
+                        ViewConfiguration.getLongPressTimeout().toLong()
+                    )
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (!longPressTriggered) {
+                        if (abs(event.rawX - downX) > touchSlop ||
+                            abs(event.rawY - downY) > touchSlop
+                        ) {
+                            movedBeforeLongPress = true
+                            longPressRunnable?.let(gestureHandler::removeCallbacks)
+                        }
+                    } else {
+                        updateSwipeSelection(event.rawX, event.rawY)
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+
+                    if (longPressTriggered) {
+                        val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
+                        dismissAlternatePopup()
+                        if (selectedCharacter != null) {
+                            commitCharacter(selectedCharacter)
+                        }
+                    } else if (!movedBeforeLongPress) {
+                        keyAction()
+                    }
+
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let(gestureHandler::removeCallbacks)
+                    dismissAlternatePopup()
+                    true
+                }
+
+                else -> true
+            }
+        }
+    }
+
+    private fun showAlternatives(
+        anchor: View,
+        alternatives: List<String>,
+        swipeSelection: Boolean
+    ) {
+        dismissAlternatePopup()
+
         val popupContent = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -342,34 +451,37 @@ class PejKeyboardService : InputMethodService() {
             }
         }
 
-        lateinit var popup: PopupWindow
-
-        alternatives.forEach { character ->
-            val displayCharacter = if (character in listOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")) {
+        val optionViews = alternatives.map { character ->
+            val displayCharacter = if (character in DIACRITIC_CHARACTERS) {
                 "◌$character"
             } else {
                 character
             }
 
-            popupContent.addView(
-                TextView(this).apply {
-                    text = displayCharacter
-                    textSize = 20f
-                    setTextColor(textColor)
-                    gravity = Gravity.CENTER
-                    includeFontPadding = false
-                    minWidth = 44.dp()
-                    minHeight = 44.dp()
+            TextView(this).apply {
+                text = displayCharacter
+                textSize = 20f
+                setTextColor(textColor)
+                gravity = Gravity.CENTER
+                includeFontPadding = false
+                minWidth = 44.dp()
+                minHeight = 44.dp()
+
+                if (!swipeSelection) {
                     setOnClickListener {
                         commitCharacter(character)
-                        popup.dismiss()
+                        dismissAlternatePopup()
                     }
-                },
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    48.dp()
+                }
+            }.also { option ->
+                popupContent.addView(
+                    option,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        48.dp()
+                    )
                 )
-            )
+            }
         }
 
         popupContent.measure(
@@ -377,13 +489,14 @@ class PejKeyboardService : InputMethodService() {
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         )
 
-        popup = PopupWindow(
+        val popup = PopupWindow(
             popupContent,
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-            true
+            !swipeSelection
         ).apply {
-            isOutsideTouchable = true
+            isTouchable = !swipeSelection
+            isOutsideTouchable = !swipeSelection
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             elevation = 8.dp().toFloat()
         }
@@ -394,6 +507,52 @@ class PejKeyboardService : InputMethodService() {
             0,
             -anchor.height - popupContent.measuredHeight
         )
+
+        if (swipeSelection) {
+            alternatePopup = popup
+            alternatePopupOptions = optionViews
+            selectedAlternateIndex = -1
+        }
+    }
+
+    private fun updateSwipeSelection(rawX: Float, rawY: Float) {
+        val x = rawX.toInt()
+        val y = rawY.toInt()
+        val nextIndex = alternatePopupOptions.indexOfFirst { option ->
+            val location = IntArray(2)
+            option.getLocationOnScreen(location)
+            Rect(
+                location[0],
+                location[1],
+                location[0] + option.width,
+                location[1] + option.height
+            ).contains(x, y)
+        }
+
+        if (nextIndex == selectedAlternateIndex) {
+            return
+        }
+
+        selectedAlternateIndex = nextIndex
+        alternatePopupOptions.forEachIndexed { index, option ->
+            val isSelected = index == selectedAlternateIndex
+            option.background = if (isSelected) {
+                GradientDrawable().apply {
+                    setColor(accentColor)
+                    cornerRadius = 8.dp().toFloat()
+                }
+            } else {
+                null
+            }
+            option.setTextColor(if (isSelected) Color.WHITE else textColor)
+        }
+    }
+
+    private fun dismissAlternatePopup() {
+        alternatePopup?.dismiss()
+        alternatePopup = null
+        alternatePopupOptions = emptyList()
+        selectedAlternateIndex = -1
     }
 
     private fun handleEnter() {
@@ -430,4 +589,10 @@ class PejKeyboardService : InputMethodService() {
 
     private fun Int.dp(): Int =
         (this * resources.displayMetrics.density).toInt()
+
+    companion object {
+        private const val SETTINGS_PREFERENCES = "keyboard_settings"
+        private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
+        private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
+    }
 }
