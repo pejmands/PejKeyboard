@@ -649,27 +649,42 @@ class PejKeyboardService : InputMethodService() {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             elevation = 8.dp().toFloat()
             setClippingEnabled(true)
+            setIsLaidOutInScreen(true)
+            setIsClippedToScreen(true)
         }
 
         val anchorLocation = IntArray(2)
         anchor.getLocationOnScreen(anchorLocation)
 
+        val verticalMargin = 8.dp()
         val minLeft = visibleFrame.left + horizontalMargin
         val maxLeft = visibleFrame.right - horizontalMargin - popupWidth
         val centeredLeft = anchorLocation[0] + (anchor.width - popupWidth) / 2
         val popupLeft = centeredLeft.coerceIn(minLeft, maxLeft.coerceAtLeast(minLeft))
-        val xOffset = popupLeft - anchorLocation[0]
 
-        val spaceAbove = anchorLocation[1] - visibleFrame.top
-        val spaceBelow = visibleFrame.bottom - (anchorLocation[1] + anchor.height)
+        val anchorTop = anchorLocation[1]
+        val anchorBottom = anchorTop + anchor.height
+        val spaceAbove = anchorTop - visibleFrame.top
+        val spaceBelow = visibleFrame.bottom - anchorBottom
         val showAbove = spaceAbove >= popupHeight || spaceAbove >= spaceBelow
-        val yOffset = if (showAbove) {
-            -anchor.height - popupHeight
+        val desiredTop = if (showAbove) {
+            anchorTop - popupHeight
         } else {
-            0
+            anchorBottom
         }
+        val maxTop = (visibleFrame.bottom - verticalMargin - popupHeight)
+            .coerceAtLeast(visibleFrame.top + verticalMargin)
+        val popupTop = desiredTop.coerceIn(
+            visibleFrame.top + verticalMargin,
+            maxTop
+        )
 
-        popup.showAsDropDown(anchor, xOffset, yOffset)
+        popup.showAtLocation(
+            anchor,
+            Gravity.TOP or Gravity.LEFT,
+            popupLeft,
+            popupTop
+        )
         alternatePopup = popup
 
         if (swipeSelection) {
