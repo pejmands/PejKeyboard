@@ -649,6 +649,8 @@ class PejKeyboardService : InputMethodService() {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             elevation = 8.dp().toFloat()
             setClippingEnabled(true)
+            setIsLaidOutInScreen(true)
+            setIsClippedToScreen(true)
         }
 
         val anchorLocation = IntArray(2)
