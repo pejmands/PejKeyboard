@@ -89,7 +89,7 @@ class PejKeyboardService : InputMethodService() {
     private val numberRows = listOf(
         listOf("۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"),
         listOf("@", "#", "$", "%", "&", "-", "+", "(", ")", "/"),
-        listOf("*", "\" ", "'", ":", ";", "!", "؟", "=", "_", "،")
+        listOf("*", "\"", "'", ":", ";", "!", "؟", "=", "_", "،")
     )
 
     override fun onCreateInputView(): View {
