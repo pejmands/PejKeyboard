@@ -7,6 +7,8 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.TextView
 
 class MainActivity : Activity() {
@@ -14,7 +16,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val preferences = getSharedPreferences(SETTINGS_PREFERENCES, MODE_PRIVATE)
+        val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
         val selectedMode = AlternateSelectionMode.fromPreference(
             preferences.getString(KEY_ALTERNATE_SELECTION_MODE, null)
         )
@@ -28,17 +30,8 @@ class MainActivity : Activity() {
         }
 
         content.addView(
-            TextView(this).apply {
-                text = getString(R.string.alternate_selection_title)
-                textSize = 20f
-                setTextColor(resources.getColor(android.R.color.primary_text_light, theme))
-            },
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 16.dp()
-            }
+            createTitle(R.string.alternate_selection_title),
+            matchWidthWrapHeight().apply { bottomMargin = 16.dp() }
         )
 
         content.addView(
@@ -46,12 +39,7 @@ class MainActivity : Activity() {
                 text = getString(R.string.alternate_selection_description)
                 textSize = 15f
             },
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 16.dp()
-            }
+            matchWidthWrapHeight().apply { bottomMargin = 16.dp() }
         )
 
         val tapOption = RadioButton(this).apply {
@@ -70,41 +58,135 @@ class MainActivity : Activity() {
             orientation = RadioGroup.VERTICAL
             addView(tapOption)
             addView(swipeOption)
-            check(
-                if (selectedMode == AlternateSelectionMode.SWIPE) {
-                    swipeOption.id
-                } else {
-                    tapOption.id
-                }
-            )
+            check(if (selectedMode == AlternateSelectionMode.SWIPE) swipeOption.id else tapOption.id)
             setOnCheckedChangeListener { _, checkedId ->
                 val mode = if (checkedId == swipeOption.id) {
                     AlternateSelectionMode.SWIPE
                 } else {
                     AlternateSelectionMode.TAP
                 }
-                preferences.edit()
-                    .putString(KEY_ALTERNATE_SELECTION_MODE, mode.preferenceValue)
-                    .apply()
+                preferences.edit().putString(KEY_ALTERNATE_SELECTION_MODE, mode.preferenceValue).apply()
             }
         }
+        content.addView(options, matchWidthWrapHeight())
+
+        addDivider(content)
 
         content.addView(
-            options,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+            createTitle(R.string.backspace_settings_title),
+            matchWidthWrapHeight().apply { bottomMargin = 8.dp() }
+        )
+        content.addView(
+            TextView(this).apply {
+                text = getString(R.string.backspace_settings_description)
+                textSize = 14f
+            },
+            matchWidthWrapHeight().apply { bottomMargin = 16.dp() }
         )
 
-        setContentView(content)
+        addTimingSetting(
+            content, preferences,
+            R.string.backspace_hold_duration_title,
+            R.string.backspace_hold_duration_description,
+            BackspaceSettings.KEY_HOLD_DURATION_MS,
+            BackspaceSettings.HOLD_DURATION_MIN_MS,
+            BackspaceSettings.HOLD_DURATION_MAX_MS,
+            BackspaceSettings.HOLD_DURATION_STEP_MS,
+            BackspaceSettings.HOLD_DURATION_DEFAULT_MS
+        )
+
+        addTimingSetting(
+            content, preferences,
+            R.string.backspace_repeat_interval_title,
+            R.string.backspace_repeat_interval_description,
+            BackspaceSettings.KEY_REPEAT_INTERVAL_MS,
+            BackspaceSettings.REPEAT_INTERVAL_MIN_MS,
+            BackspaceSettings.REPEAT_INTERVAL_MAX_MS,
+            BackspaceSettings.REPEAT_INTERVAL_STEP_MS,
+            BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS
+        )
+
+        setContentView(ScrollView(this).apply {
+            isFillViewport = true
+            addView(content)
+        })
     }
 
-    private fun Int.dp(): Int =
-        (this * resources.displayMetrics.density).toInt()
+    private fun addTimingSetting(
+        content: LinearLayout,
+        preferences: android.content.SharedPreferences,
+        titleRes: Int,
+        descriptionRes: Int,
+        key: String,
+        minimum: Int,
+        maximum: Int,
+        step: Int,
+        defaultValue: Int
+    ) {
+        content.addView(createTitle(titleRes, 16f), matchWidthWrapHeight().apply {
+            bottomMargin = 4.dp()
+        })
+        content.addView(TextView(this).apply {
+            text = getString(descriptionRes)
+            textSize = 13f
+        }, matchWidthWrapHeight().apply {
+            bottomMargin = 8.dp()
+        })
+
+        val initialValue = preferences.getInt(key, defaultValue).coerceIn(minimum, maximum)
+        val valueLabel = TextView(this).apply {
+            text = getString(R.string.setting_value_milliseconds, initialValue)
+            textSize = 14f
+        }
+        val seekBar = SeekBar(this).apply {
+            max = (maximum - minimum) / step
+            progress = (initialValue - minimum) / step
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    val value = minimum + progress * step
+                    valueLabel.text = getString(R.string.setting_value_milliseconds, value)
+                    preferences.edit().putInt(key, value).apply()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            })
+        }
+        content.addView(valueLabel, matchWidthWrapHeight())
+        content.addView(seekBar, matchWidthWrapHeight().apply {
+            bottomMargin = 20.dp()
+        })
+    }
+
+    private fun addDivider(content: LinearLayout) {
+        content.addView(
+            View(this).apply {
+                setBackgroundColor(resources.getColor(android.R.color.darker_gray, theme))
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1.dp()
+            ).apply {
+                topMargin = 20.dp()
+                bottomMargin = 20.dp()
+            }
+        )
+    }
+
+    private fun createTitle(resourceId: Int, size: Float = 20f) = TextView(this).apply {
+        text = getString(resourceId)
+        textSize = size
+        setTextColor(resources.getColor(android.R.color.primary_text_light, theme))
+    }
+
+    private fun matchWidthWrapHeight() = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    )
+
+    private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
 
     companion object {
-        private const val SETTINGS_PREFERENCES = "keyboard_settings"
         private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
     }
 }

@@ -357,7 +357,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun getAlternateSelectionMode(): AlternateSelectionMode {
-        val value = getSharedPreferences(SETTINGS_PREFERENCES, MODE_PRIVATE)
+        val value = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
             .getString(KEY_ALTERNATE_SELECTION_MODE, AlternateSelectionMode.TAP.preferenceValue)
         return AlternateSelectionMode.fromPreference(value)
     }
@@ -562,17 +562,20 @@ class PejKeyboardService : InputMethodService() {
 
     private fun installBackspaceBehavior(keyView: View) {
         val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout().toLong()
-        val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
 
         var longPressTriggered = false
         var isDoubleTapHold = false
         var longPressRunnable: Runnable? = null
         var repeatRunnable: Runnable? = null
+        var repeatIntervalMs = BackspaceSettings.REPEAT_INTERVAL_DEFAULT_MS.toLong()
 
         keyView.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     longPressTriggered = false
+                    val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+                    val holdDurationMs = BackspaceSettings.readHoldDuration(preferences).toLong()
+                    repeatIntervalMs = BackspaceSettings.readRepeatInterval(preferences).toLong()
                     val previousTapTime = lastBackspaceTapUpTime
                     isDoubleTapHold = previousTapTime != null &&
                         event.eventTime >= previousTapTime &&
@@ -593,17 +596,17 @@ class PejKeyboardService : InputMethodService() {
                                     }
 
                                     deletePreviousWord()
-                                    gestureHandler.postDelayed(this, BACKSPACE_REPEAT_INTERVAL_MS)
+                                    gestureHandler.postDelayed(this, repeatIntervalMs)
                                 }
                             }
                             gestureHandler.postDelayed(
                                 repeatRunnable!!,
-                                BACKSPACE_REPEAT_INTERVAL_MS
+                                repeatIntervalMs
                             )
                         }
                     }
 
-                    gestureHandler.postDelayed(longPressRunnable!!, longPressTimeout)
+                    gestureHandler.postDelayed(longPressRunnable!!, holdDurationMs)
                     true
                 }
 
@@ -693,11 +696,9 @@ class PejKeyboardService : InputMethodService() {
         (this * resources.displayMetrics.density).toInt()
 
     companion object {
-        private const val SETTINGS_PREFERENCES = "keyboard_settings"
         private const val KEY_ALTERNATE_SELECTION_MODE = "alternate_selection_mode"
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
-        private const val BACKSPACE_REPEAT_INTERVAL_MS = 180L
         private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
     }
 }
