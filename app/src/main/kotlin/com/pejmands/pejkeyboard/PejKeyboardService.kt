@@ -28,6 +28,7 @@ import android.widget.ProgressBar
 import android.widget.PopupWindow
 import android.widget.TextView
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class PejKeyboardService : InputMethodService() {
 
@@ -38,6 +39,8 @@ class PejKeyboardService : InputMethodService() {
 
     private var alternatePopup: PopupWindow? = null
     private var alternatePopupOptions: List<TextView> = emptyList()
+    private var alternatePopupCharacterIndices: List<Int> = emptyList()
+    private var alternatePopupDefaultIndex = -1
     private var selectedAlternateIndex = -1
     private var lastBackspaceTapUpTime: Long? = null
     private var clearTextPopup: PopupWindow? = null
@@ -601,7 +604,7 @@ class PejKeyboardService : InputMethodService() {
                         }
                     } else if (abs(event.rawX - downX) > touchSlop) {
                         movedHorizontallyAfterLongPress = true
-                        updateSwipeSelection(event.rawX)
+                        updateSwipeSelection(event.rawX - downX)
                     }
                     true
                 }
@@ -663,7 +666,13 @@ class PejKeyboardService : InputMethodService() {
             }
         }
 
-        val optionViews = alternatives.map { character ->
+        val popupCharacterIndices = buildAlternatePopupOrder(
+            alternatives.size,
+            defaultIndex
+        )
+        val optionWidth = 48.dp()
+        val optionViews = popupCharacterIndices.map { characterIndex ->
+            val character = alternatives[characterIndex]
             val displayCharacter = when {
                 character == "\u200D" -> "▸⁞◂"
                 character in DIACRITIC_CHARACTERS -> "◌$character"
@@ -673,18 +682,18 @@ class PejKeyboardService : InputMethodService() {
             TextView(this).apply {
                 text = displayCharacter
                 textSize = 20f
-                setTextColor(if (alternatives.indexOf(character) == defaultIndex) Color.WHITE else textColor)
+                setTextColor(if (characterIndex == defaultIndex) Color.WHITE else textColor)
                 gravity = Gravity.CENTER
                 includeFontPadding = false
                 isSoundEffectsEnabled = false
-                if (alternatives.indexOf(character) == defaultIndex) {
+                if (characterIndex == defaultIndex) {
                     background = GradientDrawable().apply {
                         setColor(accentColor)
                         cornerRadius = 8.dp().toFloat()
                     }
                 }
-                minWidth = 44.dp()
-                minHeight = 44.dp()
+                minWidth = optionWidth
+                minHeight = optionWidth
 
                 if (!swipeSelection) {
                     setOnClickListener {
@@ -697,8 +706,8 @@ class PejKeyboardService : InputMethodService() {
                 popupContent.addView(
                     option,
                     LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        48.dp()
+                        optionWidth,
+                        optionWidth
                     )
                 )
             }
@@ -757,8 +766,16 @@ class PejKeyboardService : InputMethodService() {
         val verticalMargin = 8.dp()
         val minLeft = visibleFrame.left + horizontalMargin
         val maxLeft = visibleFrame.right - horizontalMargin - popupWidth
-        val centeredLeft = anchorLocation[0] + (anchor.width - popupWidth) / 2
-        val popupLeft = centeredLeft.coerceIn(minLeft, maxLeft.coerceAtLeast(minLeft))
+        val defaultSlot = popupCharacterIndices.indexOf(defaultIndex)
+        val defaultCenterOffset = popupContent.paddingLeft +
+                defaultSlot * optionWidth + optionWidth / 2
+        val anchorCenter = anchorLocation[0] + anchor.width / 2
+        val desiredLeft = if (popupContent.measuredWidth <= popupWidth) {
+            anchorCenter - defaultCenterOffset
+        } else {
+            anchorCenter - popupWidth / 2
+        }
+        val popupLeft = desiredLeft.coerceIn(minLeft, maxLeft.coerceAtLeast(minLeft))
 
         val anchorTop = anchorLocation[1]
         val anchorBottom = anchorTop + anchor.height
@@ -784,20 +801,29 @@ class PejKeyboardService : InputMethodService() {
             popupTop
         )
         alternatePopup = popup
+        popupContainer.post {
+            if (popupContent.measuredWidth > popupWidth) {
+                val scrollX = (defaultCenterOffset - popupWidth / 2)
+                    .coerceIn(0, popupContent.measuredWidth - popupWidth)
+                popupContainer.scrollTo(scrollX, 0)
+            }
+        }
 
         if (swipeSelection) {
             alternatePopupOptions = optionViews
+            alternatePopupCharacterIndices = popupCharacterIndices
+            alternatePopupDefaultIndex = defaultIndex
             selectedAlternateIndex = defaultIndex
         }
     }
 
-    private fun updateSwipeSelection(rawX: Float) {
-        val optionBounds = alternatePopupOptions.map { option ->
-            val location = IntArray(2)
-            option.getLocationOnScreen(location)
-            location[0] to (location[0] + option.width)
-        }
-        val nextIndex = findAlternateOptionIndex(rawX, optionBounds)
+    private fun updateSwipeSelection(deltaX: Float) {
+        val nextIndex = findAlternateOptionIndexByDelta(
+            deltaX = deltaX,
+            defaultIndex = alternatePopupDefaultIndex,
+            characterCount = alternatePopupCharacterIndices.size,
+            optionWidth = 48.dp()
+        )
 
         if (nextIndex == selectedAlternateIndex) {
             return
@@ -805,7 +831,7 @@ class PejKeyboardService : InputMethodService() {
 
         selectedAlternateIndex = nextIndex
         alternatePopupOptions.forEachIndexed { index, option ->
-            val isSelected = index == selectedAlternateIndex
+            val isSelected = alternatePopupCharacterIndices[index] == selectedAlternateIndex
             option.background = if (isSelected) {
                 GradientDrawable().apply {
                     setColor(accentColor)
@@ -822,6 +848,8 @@ class PejKeyboardService : InputMethodService() {
         alternatePopup?.dismiss()
         alternatePopup = null
         alternatePopupOptions = emptyList()
+        alternatePopupCharacterIndices = emptyList()
+        alternatePopupDefaultIndex = -1
         selectedAlternateIndex = -1
     }
 
