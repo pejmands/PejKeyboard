@@ -41,6 +41,7 @@ class PejKeyboardService : InputMethodService() {
     private var alternatePopupCharacterIndices: List<Int> = emptyList()
     private var alternatePopupDefaultIndex = -1
     private var selectedAlternateIndex = -1
+    private var alternatePopupOptionWidth = 48.dp()
     private var lastBackspaceTapUpTime: Long? = null
     private var clearTextPopup: PopupWindow? = null
     private var clearTextCountdownRunnable: Runnable? = null
@@ -669,7 +670,17 @@ class PejKeyboardService : InputMethodService() {
             alternatives.size,
             defaultIndex
         )
-        val optionWidth = 48.dp()
+        val visibleFrame = Rect()
+        anchor.getWindowVisibleDisplayFrame(visibleFrame)
+        val horizontalMargin = 8.dp()
+        val maxPopupWidth = (visibleFrame.width() - horizontalMargin * 2).coerceAtLeast(1)
+        val optionWidth = calculateAlternateOptionWidth(
+            maxPopupWidth = maxPopupWidth,
+            optionCount = popupCharacterIndices.size,
+            horizontalPadding = 12.dp(),
+            preferredWidth = 48.dp(),
+            minimumWidth = 36.dp()
+        )
         val optionViews = popupCharacterIndices.map { characterIndex ->
             val character = alternatives[characterIndex]
             val displayCharacter = when {
@@ -717,12 +728,7 @@ class PejKeyboardService : InputMethodService() {
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         )
 
-        val visibleFrame = Rect()
-        anchor.getWindowVisibleDisplayFrame(visibleFrame)
-        val horizontalMargin = 8.dp()
-        val popupWidth = popupContent.measuredWidth.coerceAtMost(
-            (visibleFrame.width() - horizontalMargin * 2).coerceAtLeast(1)
-        )
+        val popupWidth = popupContent.measuredWidth.coerceAtMost(maxPopupWidth)
         val popupHeight = popupContent.measuredHeight
 
         val popupContainer = HorizontalScrollView(this).apply {
@@ -808,6 +814,7 @@ class PejKeyboardService : InputMethodService() {
             }
         }
 
+        alternatePopupOptionWidth = optionWidth
         if (swipeSelection) {
             alternatePopupOptions = optionViews
             alternatePopupCharacterIndices = popupCharacterIndices
@@ -821,7 +828,7 @@ class PejKeyboardService : InputMethodService() {
             deltaX = deltaX,
             defaultIndex = alternatePopupDefaultIndex,
             characterCount = alternatePopupCharacterIndices.size,
-            optionWidth = 48.dp()
+            optionWidth = alternatePopupOptionWidth
         )
 
         if (nextIndex == selectedAlternateIndex) {
@@ -850,6 +857,7 @@ class PejKeyboardService : InputMethodService() {
         alternatePopupCharacterIndices = emptyList()
         alternatePopupDefaultIndex = -1
         selectedAlternateIndex = -1
+        alternatePopupOptionWidth = 48.dp()
     }
 
 
