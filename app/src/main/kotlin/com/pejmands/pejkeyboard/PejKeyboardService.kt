@@ -392,11 +392,21 @@ class PejKeyboardService : InputMethodService() {
             if (alternateSet != null) {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
-                        installTapSelection(this, alternateSet, action)
+                        installTapSelection(
+                            this,
+                            alternateSet,
+                            action,
+                            edgeAwarePopupAlignment = NumericAlternateCharacters.byKey.containsKey(label)
+                        )
                     }
 
                     AlternateSelectionMode.SWIPE -> {
-                        installSwipeSelection(this, alternateSet, action)
+                        installSwipeSelection(
+                            this,
+                            alternateSet,
+                            action,
+                            edgeAwarePopupAlignment = NumericAlternateCharacters.byKey.containsKey(label)
+                        )
                     }
                 }
             }
@@ -506,7 +516,8 @@ class PejKeyboardService : InputMethodService() {
     private fun installTapSelection(
         keyView: View,
         alternateSet: AlternateCharacterSet,
-        keyAction: () -> Unit
+        keyAction: () -> Unit,
+        edgeAwarePopupAlignment: Boolean
     ) {
         val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
         var downX = 0f
@@ -531,7 +542,12 @@ class PejKeyboardService : InputMethodService() {
                     val holdDurationMs = AlternatePopupSettings.readHoldDuration(preferences)
                     longPressRunnable = Runnable {
                         longPressTriggered = true
-                        showAlternatives(keyView, alternateSet, swipeSelection = false)
+                        showAlternatives(
+                            keyView,
+                            alternateSet,
+                            swipeSelection = false,
+                            edgeAwarePopupAlignment = edgeAwarePopupAlignment
+                        )
                     }
                     gestureHandler.postDelayed(longPressRunnable!!, holdDurationMs.toLong())
                     true
@@ -577,7 +593,8 @@ class PejKeyboardService : InputMethodService() {
     private fun installSwipeSelection(
         keyView: View,
         alternateSet: AlternateCharacterSet,
-        keyAction: () -> Unit
+        keyAction: () -> Unit,
+        edgeAwarePopupAlignment: Boolean
     ) {
         val alternatives = alternateSet.characters
         val defaultIndex = alternateSet.defaultIndex
@@ -603,7 +620,12 @@ class PejKeyboardService : InputMethodService() {
                     longPressRunnable = Runnable {
                         longPressTriggered = true
                         keyView.parent?.requestDisallowInterceptTouchEvent(true)
-                        showAlternatives(keyView, alternateSet, swipeSelection = true)
+                        showAlternatives(
+                            keyView,
+                            alternateSet,
+                            swipeSelection = true,
+                            edgeAwarePopupAlignment = edgeAwarePopupAlignment
+                        )
                     }
                     val preferences = getSharedPreferences(
                         BackspaceSettings.PREFERENCES_NAME,
@@ -669,7 +691,8 @@ class PejKeyboardService : InputMethodService() {
     private fun showAlternatives(
         anchor: View,
         alternateSet: AlternateCharacterSet,
-        swipeSelection: Boolean
+        swipeSelection: Boolean,
+        edgeAwarePopupAlignment: Boolean
     ) {
         val alternatives = alternateSet.characters
         val defaultIndex = alternateSet.defaultIndex
@@ -709,11 +732,15 @@ class PejKeyboardService : InputMethodService() {
         val availableRightWidth = (
                 maxLeft - anchorCenter - popupContent.paddingRight - optionWidth / 2
                 ).coerceAtLeast(0)
-        val leftOptionCount = calculateAlternatePopupLeftOptionCount(
-            optionCount = alternatives.size,
-            availableLeftWidth = availableLeftWidth,
-            availableRightWidth = availableRightWidth
-        )
+        val leftOptionCount = if (edgeAwarePopupAlignment) {
+            calculateAlternatePopupLeftOptionCount(
+                optionCount = alternatives.size,
+                availableLeftWidth = availableLeftWidth,
+                availableRightWidth = availableRightWidth
+            )
+        } else {
+            alternatives.size / 2
+        }
         val popupCharacterIndices = buildAlternatePopupOrder(
             characterCount = alternatives.size,
             defaultIndex = defaultIndex,
