@@ -41,7 +41,7 @@ class PejKeyboardService : InputMethodService() {
     private var alternatePopupCharacterIndices: List<Int> = emptyList()
     private var alternatePopupDefaultIndex = -1
     private var selectedAlternateIndex = -1
-    private var alternatePopupOptionWidth = 48.dp()
+    private var alternatePopupOptionWidth = 0
     private var lastBackspaceTapUpTime: Long? = null
     private var clearTextPopup: PopupWindow? = null
     private var clearTextCountdownRunnable: Runnable? = null
@@ -857,7 +857,7 @@ class PejKeyboardService : InputMethodService() {
         alternatePopupCharacterIndices = emptyList()
         alternatePopupDefaultIndex = -1
         selectedAlternateIndex = -1
-        alternatePopupOptionWidth = 48.dp()
+        alternatePopupOptionWidth = 0
     }
 
 
