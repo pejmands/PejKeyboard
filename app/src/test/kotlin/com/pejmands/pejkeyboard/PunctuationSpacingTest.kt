@@ -26,6 +26,14 @@ class PunctuationSpacingTest {
     }
 
     @Test
+    fun doesNotDeleteLineBreaksBeforePunctuation() {
+        val edit = PunctuationSpacing.createInsertion("متن\n", ".")
+
+        assertEquals(0, edit.charactersToDelete)
+        assertEquals(". ", edit.text)
+    }
+
+    @Test
     fun addsSpaceWhenPunctuationIsInsertedBetweenWords() {
         val edit = PunctuationSpacing.createInsertion("هوا بارانی است", "؟")
 
