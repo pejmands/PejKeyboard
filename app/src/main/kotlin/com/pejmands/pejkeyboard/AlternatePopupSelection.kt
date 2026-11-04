@@ -39,3 +39,20 @@ internal fun findAlternateOptionIndexByDelta(
 
     return visualOrder[selectedSlot]
 }
+
+internal fun calculateAlternateOptionWidth(
+    maxPopupWidth: Int,
+    optionCount: Int,
+    horizontalPadding: Int,
+    preferredWidth: Int,
+    minimumWidth: Int
+): Int {
+    require(maxPopupWidth > 0)
+    require(optionCount > 0)
+    require(horizontalPadding >= 0)
+    require(minimumWidth > 0)
+    require(preferredWidth >= minimumWidth)
+
+    val availableWidth = (maxPopupWidth - horizontalPadding).coerceAtLeast(1)
+    return (availableWidth / optionCount).coerceIn(minimumWidth, preferredWidth)
+}
