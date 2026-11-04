@@ -41,7 +41,7 @@ class NumericAlternateCharactersTest {
     @Test
     fun limitingAnAlternateSetPreservesItsDefaultCharacter() {
         val alternateSet = AlternateCharacterSet(
-            characters = (1..10).map(Int::toString),
+            characters = (1..10).map { it.toString() },
             defaultIndex = 9
         )
 
