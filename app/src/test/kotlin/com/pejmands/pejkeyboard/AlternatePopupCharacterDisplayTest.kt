@@ -22,7 +22,7 @@ class AlternatePopupCharacterDisplayTest {
         assertEquals("\uFE78", alternatePopupCharacterDisplay("\u064F"))
         assertEquals("\uFE70", alternatePopupCharacterDisplay("\u064B"))
         assertEquals("\uFE7E", alternatePopupCharacterDisplay("\u0652"))
-        assertEquals("\u0640\u0654", alternatePopupCharacterDisplay("\u0654"))
+        assertEquals("\u25CC\u0654", alternatePopupCharacterDisplay("\u0654"))
     }
 
     @Test
