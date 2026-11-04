@@ -6,11 +6,10 @@ private val diacriticDisplayCharacters = mapOf(
     "\u0650" to "\uFE7A",
     "\u064F" to "\uFE78",
     "\u064B" to "\uFE70",
-    "\u0652" to "\uFE7E",
-    "\u0654" to "\u25CC\u0654"
+    "\u0652" to "\uFE7E"
 )
 
-private val diacriticCharacters = diacriticDisplayCharacters.keys + "\u0670"
+private val diacriticCharacters = diacriticDisplayCharacters.keys + listOf("\u0670", "\u0654")
 
 internal fun alternatePopupCharacterDisplay(character: String): String {
     return diacriticDisplayCharacters[character] ?: character
