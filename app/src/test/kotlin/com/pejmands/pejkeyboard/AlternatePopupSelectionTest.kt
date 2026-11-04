@@ -8,7 +8,7 @@ class AlternatePopupSelectionTest {
     @Test
     fun placesDefaultOptionNearTheCenterForFourAlternates() {
         assertEquals(
-            listOf(3, 2, 0, 1),
+            listOf(2, 3, 0, 1),
             buildAlternatePopupOrder(characterCount = 4, defaultIndex = 0)
         )
     }
@@ -19,6 +19,30 @@ class AlternatePopupSelectionTest {
             listOf(0, 1, 2, 3, 4),
             buildAlternatePopupOrder(characterCount = 5, defaultIndex = 2)
         )
+    }
+
+    @Test
+    fun wrapsAroundWithoutDuplicatingOrOmittingEightAlternates() {
+        assertEquals(
+            listOf(6, 7, 0, 1, 2, 3, 4, 5),
+            buildAlternatePopupOrder(characterCount = 8, defaultIndex = 2)
+        )
+    }
+
+    @Test
+    fun returnsEveryAlternateExactlyOnceForEveryDefaultPosition() {
+        for (characterCount in 1..12) {
+            val expectedIndices = (0 until characterCount).toSet()
+
+            for (defaultIndex in 0 until characterCount) {
+                val order = buildAlternatePopupOrder(characterCount, defaultIndex)
+
+                assertEquals(characterCount, order.size)
+                assertEquals(characterCount, order.toSet().size)
+                assertEquals(expectedIndices, order.toSet())
+                assertEquals(defaultIndex, order[characterCount / 2])
+            }
+        }
     }
 
     @Test
