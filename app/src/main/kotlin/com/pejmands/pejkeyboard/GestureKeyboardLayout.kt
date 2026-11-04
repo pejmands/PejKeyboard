@@ -2,6 +2,7 @@ package com.pejmands.pejkeyboard
 
 import android.content.Context
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.widget.LinearLayout
 import kotlin.math.abs
@@ -106,6 +107,11 @@ internal class GestureKeyboardLayout(
 
     init {
         isClickable = true
+    }
+
+    override fun onViewAdded(child: View) {
+        super.onViewAdded(child)
+        child.isClickable = true
     }
 
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
