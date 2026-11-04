@@ -554,9 +554,11 @@ class PejKeyboardService : InputMethodService() {
 
     private fun installSwipeSelection(
         keyView: View,
-        alternatives: List<String>,
+        alternateSet: AlternateCharacterSet,
         keyAction: () -> Unit
     ) {
+        val alternatives = alternateSet.characters
+        val defaultIndex = alternateSet.defaultIndex
         val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
         var downX = 0f
         var downY = 0f
@@ -649,8 +651,8 @@ class PejKeyboardService : InputMethodService() {
     ) {
         val alternatives = alternateSet.characters
         val defaultIndex = alternateSet.defaultIndex
-        selectedAlternateIndex = defaultIndex
         dismissAlternatePopup()
+        selectedAlternateIndex = defaultIndex
 
         val popupContent = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
