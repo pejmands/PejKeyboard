@@ -409,6 +409,17 @@ class PejKeyboardService : InputMethodService() {
             performKeyFeedback()
         }
 
+        val connection = currentInputConnection
+        if (action == KeyboardGestureAction.DELETE ||
+            action == KeyboardGestureAction.BACKSPACE
+        ) {
+            val selectedText = connection?.getSelectedText(0)
+            if (!selectedText.isNullOrEmpty()) {
+                connection.commitText("", 1)
+                return
+            }
+        }
+
         repeat(steps) {
             when (action) {
                 KeyboardGestureAction.MOVE_CURSOR -> {
@@ -422,15 +433,11 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 KeyboardGestureAction.DELETE -> {
-                    deleteSelectionOrSurroundingText(beforeLength = 0, afterLength = 1) {
-                        it.deleteSurroundingTextInCodePoints(0, 1)
-                    }
+                    connection?.deleteSurroundingTextInCodePoints(0, 1)
                 }
 
                 KeyboardGestureAction.BACKSPACE -> {
-                    deleteSelectionOrSurroundingText(beforeLength = 1, afterLength = 0) {
-                        it.deleteSurroundingTextInCodePoints(1, 0)
-                    }
+                    connection?.deleteSurroundingTextInCodePoints(1, 0)
                 }
 
                 KeyboardGestureAction.DISABLED -> Unit
@@ -949,7 +956,7 @@ class PejKeyboardService : InputMethodService() {
                     }
 
                     if (!longPressTriggered) {
-                        if (deleteSelectionOrSurroundingText(1, 0) {
+                        if (deleteSelectionOrSurroundingText {
                                 it.deleteSurroundingText(1, 0)
                             }
                         ) {
@@ -1128,8 +1135,6 @@ class PejKeyboardService : InputMethodService() {
     }
 
     private fun deleteSelectionOrSurroundingText(
-        beforeLength: Int,
-        afterLength: Int,
         deleteSurrounding: (android.view.inputmethod.InputConnection) -> Boolean
     ): Boolean {
         val connection = currentInputConnection ?: return false
