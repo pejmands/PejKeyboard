@@ -149,6 +149,34 @@ class AlternatePopupSelectionTest {
     }
 
     @Test
+    fun swipeSelectionUsesTheDefaultSlotNearTheLeftEdge() {
+        assertEquals(
+            1,
+            findAlternateOptionIndexByDelta(
+                deltaX = 48f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48,
+                leftOptionCount = 0
+            )
+        )
+    }
+
+    @Test
+    fun swipeSelectionUsesTheDefaultSlotNearTheRightEdge() {
+        assertEquals(
+            3,
+            findAlternateOptionIndexByDelta(
+                deltaX = -48f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48,
+                leftOptionCount = 3
+            )
+        )
+    }
+
+    @Test
     fun clampsSelectionAtTheAvailableAlternates() {
         assertEquals(
             2,
