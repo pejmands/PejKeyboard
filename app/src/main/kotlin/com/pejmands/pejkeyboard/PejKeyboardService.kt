@@ -694,18 +694,18 @@ class PejKeyboardService : InputMethodService() {
         )
         val optionViews = popupCharacterIndices.map { characterIndex ->
             val character = alternatives[characterIndex]
-            val displayCharacter = when {
-                character == "\u200D" -> "▸⁞◂"
-                character in DIACRITIC_CHARACTERS -> "◌$character"
-                else -> character
+            val displayCharacter = when (character) {
+                "\u200D" -> "▸⁞◂"
+                else -> alternatePopupCharacterDisplay(character)
             }
+            val isDiacritic = isDiacriticAlternateCharacter(character)
 
             TextView(this).apply {
                 text = displayCharacter
-                textSize = 20f
+                textSize = if (isDiacritic) 28f else 20f
                 setTextColor(if (characterIndex == defaultIndex) Color.WHITE else textColor)
                 gravity = Gravity.CENTER
-                includeFontPadding = false
+                includeFontPadding = isDiacritic
                 isSoundEffectsEnabled = false
                 if (characterIndex == defaultIndex) {
                     background = GradientDrawable().apply {
@@ -1219,6 +1219,5 @@ class PejKeyboardService : InputMethodService() {
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
         private const val CLEAR_TEXT_COUNTDOWN_UPDATE_MS = 50L
-        private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٰ", "ٔ")
     }
 }
