@@ -422,11 +422,15 @@ class PejKeyboardService : InputMethodService() {
                 }
 
                 KeyboardGestureAction.DELETE -> {
-                    currentInputConnection?.deleteSurroundingTextInCodePoints(0, 1)
+                    deleteSelectionOrSurroundingText(beforeLength = 0, afterLength = 1) {
+                        it.deleteSurroundingTextInCodePoints(0, 1)
+                    }
                 }
 
                 KeyboardGestureAction.BACKSPACE -> {
-                    currentInputConnection?.deleteSurroundingTextInCodePoints(1, 0)
+                    deleteSelectionOrSurroundingText(beforeLength = 1, afterLength = 0) {
+                        it.deleteSurroundingTextInCodePoints(1, 0)
+                    }
                 }
 
                 KeyboardGestureAction.DISABLED -> Unit
@@ -945,7 +949,10 @@ class PejKeyboardService : InputMethodService() {
                     }
 
                     if (!longPressTriggered) {
-                        if (currentInputConnection?.deleteSurroundingText(1, 0) == true) {
+                        if (deleteSelectionOrSurroundingText(1, 0) {
+                                it.deleteSurroundingText(1, 0)
+                            }
+                        ) {
                             performKeyFeedback()
                         }
                         lastBackspaceTapUpTime = event.eventTime
@@ -1108,11 +1115,29 @@ class PejKeyboardService : InputMethodService() {
 
     private fun deletePreviousWord(): Boolean {
         val connection = currentInputConnection ?: return false
+        val selectedText = connection.getSelectedText(0)
+        if (!selectedText.isNullOrEmpty()) {
+            return connection.commitText("", 1)
+        }
+
         val textBeforeCursor = connection.getTextBeforeCursor(BACKSPACE_CONTEXT_LENGTH, 0)
             ?: return false
         val deleteLength = BackspaceWordDeletion.length(textBeforeCursor)
 
         return deleteLength > 0 && connection.deleteSurroundingText(deleteLength, 0)
+    }
+
+    private fun deleteSelectionOrSurroundingText(
+        beforeLength: Int,
+        afterLength: Int,
+        deleteSurrounding: (android.view.inputmethod.InputConnection) -> Boolean
+    ): Boolean {
+        val connection = currentInputConnection ?: return false
+        return deleteSelectionOrFallback(
+            selectedText = connection.getSelectedText(0),
+            deleteSelection = { connection.commitText("", 1) },
+            deleteFallback = { deleteSurrounding(connection) }
+        )
     }
 
     private fun deleteAllBeforeCursor() {
