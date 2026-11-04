@@ -687,20 +687,37 @@ class PejKeyboardService : InputMethodService() {
             }
         }
 
-        val popupCharacterIndices = buildAlternatePopupOrder(
-            alternatives.size,
-            defaultIndex
-        )
         val visibleFrame = Rect()
         anchor.getWindowVisibleDisplayFrame(visibleFrame)
         val horizontalMargin = 8.dp()
+        val minLeft = visibleFrame.left + horizontalMargin
+        val maxLeft = visibleFrame.right - horizontalMargin
         val maxPopupWidth = (visibleFrame.width() - horizontalMargin * 2).coerceAtLeast(1)
         val optionWidth = calculateAlternateOptionWidth(
             maxPopupWidth = maxPopupWidth,
-            optionCount = popupCharacterIndices.size,
+            optionCount = alternatives.size,
             horizontalPadding = 12.dp(),
             preferredWidth = 48.dp(),
             minimumWidth = 36.dp()
+        )
+        val anchorLocation = IntArray(2)
+        anchor.getLocationOnScreen(anchorLocation)
+        val anchorCenter = anchorLocation[0] + anchor.width / 2
+        val availableLeftWidth = (
+                anchorCenter - minLeft - popupContent.paddingLeft - optionWidth / 2
+                ).coerceAtLeast(0)
+        val availableRightWidth = (
+                maxLeft - anchorCenter - popupContent.paddingRight - optionWidth / 2
+                ).coerceAtLeast(0)
+        val leftOptionCount = calculateAlternatePopupLeftOptionCount(
+            optionCount = alternatives.size,
+            availableLeftWidth = availableLeftWidth,
+            availableRightWidth = availableRightWidth
+        )
+        val popupCharacterIndices = buildAlternatePopupOrder(
+            characterCount = alternatives.size,
+            defaultIndex = defaultIndex,
+            leftOptionCount = leftOptionCount
         )
         val optionViews = popupCharacterIndices.map { characterIndex ->
             val character = alternatives[characterIndex]
@@ -786,22 +803,20 @@ class PejKeyboardService : InputMethodService() {
             setIsClippedToScreen(true)
         }
 
-        val anchorLocation = IntArray(2)
-        anchor.getLocationOnScreen(anchorLocation)
-
         val verticalMargin = 8.dp()
-        val minLeft = visibleFrame.left + horizontalMargin
-        val maxLeft = visibleFrame.right - horizontalMargin - popupWidth
+        val maxPopupLeft = maxLeft - popupWidth
         val defaultSlot = popupCharacterIndices.indexOf(defaultIndex)
         val defaultCenterOffset = popupContent.paddingLeft +
                 defaultSlot * optionWidth + optionWidth / 2
-        val anchorCenter = anchorLocation[0] + anchor.width / 2
         val desiredLeft = if (popupContent.measuredWidth <= popupWidth) {
             anchorCenter - defaultCenterOffset
         } else {
             anchorCenter - popupWidth / 2
         }
-        val popupLeft = desiredLeft.coerceIn(minLeft, maxLeft.coerceAtLeast(minLeft))
+        val popupLeft = desiredLeft.coerceIn(
+            minLeft,
+            maxPopupLeft.coerceAtLeast(minLeft)
+        )
 
         val anchorTop = anchorLocation[1]
         val anchorBottom = anchorTop + anchor.height
@@ -829,7 +844,8 @@ class PejKeyboardService : InputMethodService() {
         alternatePopup = popup
         popupContainer.post {
             if (popupContent.measuredWidth > popupWidth) {
-                val scrollX = (defaultCenterOffset - popupWidth / 2)
+                val defaultCenterInViewport = anchorCenter - popupLeft
+                val scrollX = (defaultCenterOffset - defaultCenterInViewport)
                     .coerceIn(0, popupContent.measuredWidth - popupWidth)
                 popupContainer.scrollTo(scrollX, 0)
             }
