@@ -584,7 +584,7 @@ class PejKeyboardService : InputMethodService() {
                             longPressRunnable?.let(gestureHandler::removeCallbacks)
                         }
                     } else {
-                        updateSwipeSelection(event.rawX, event.rawY)
+                        updateSwipeSelection(event.rawX)
                     }
                     true
                 }
@@ -595,7 +595,7 @@ class PejKeyboardService : InputMethodService() {
                     keyView.isPressed = false
 
                     if (longPressTriggered) {
-                        updateSwipeSelection(event.rawX, event.rawY)
+                        updateSwipeSelection(event.rawX)
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
                         if (selectedCharacter != null) {
@@ -763,19 +763,13 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
-    private fun updateSwipeSelection(rawX: Float, rawY: Float) {
-        val x = rawX.toInt()
-        val y = rawY.toInt()
-        val nextIndex = alternatePopupOptions.indexOfFirst { option ->
+    private fun updateSwipeSelection(rawX: Float) {
+        val optionBounds = alternatePopupOptions.map { option ->
             val location = IntArray(2)
             option.getLocationOnScreen(location)
-            Rect(
-                location[0],
-                location[1],
-                location[0] + option.width,
-                location[1] + option.height
-            ).contains(x, y)
+            location[0] to (location[0] + option.width)
         }
+        val nextIndex = findAlternateOptionIndex(rawX, optionBounds)
 
         if (nextIndex == selectedAlternateIndex) {
             return
