@@ -111,7 +111,7 @@ class PejKeyboardService : InputMethodService() {
         "◂⁞▸" to AlternateCharacterSet(listOf("\u200D"), 0),
         "." to AlternateCharacterSet(listOf("؟", "!"), 0),
         "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
-    )
+    ) + NumericAlternateCharacters.byKey
 
     private val numberRows = listOf(
         listOf("۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"),
@@ -388,6 +388,7 @@ class PejKeyboardService : InputMethodService() {
             }
 
             val alternateSet = alternateCharacters[label.lowercase()]
+                ?.limitedTo(MAX_ALTERNATE_POPUP_OPTIONS)
             if (alternateSet != null) {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
