@@ -548,6 +548,7 @@ class PejKeyboardService : InputMethodService() {
         var downY = 0f
         var movedBeforeLongPress = false
         var longPressTriggered = false
+        var movedHorizontallyAfterLongPress = false
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
@@ -558,6 +559,7 @@ class PejKeyboardService : InputMethodService() {
                     downY = event.rawY
                     movedBeforeLongPress = false
                     longPressTriggered = false
+                    movedHorizontallyAfterLongPress = false
                     selectedAlternateIndex = -1
 
                     longPressRunnable = Runnable {
@@ -583,8 +585,9 @@ class PejKeyboardService : InputMethodService() {
                             keyView.isPressed = false
                             longPressRunnable?.let(gestureHandler::removeCallbacks)
                         }
-                    } else {
-                        updateSwipeSelection(event.rawX, event.rawY)
+                    } else if (abs(event.rawX - downX) > touchSlop) {
+                        movedHorizontallyAfterLongPress = true
+                        updateSwipeSelection(event.rawX)
                     }
                     true
                 }
@@ -595,7 +598,9 @@ class PejKeyboardService : InputMethodService() {
                     keyView.isPressed = false
 
                     if (longPressTriggered) {
-                        updateSwipeSelection(event.rawX, event.rawY)
+                        if (movedHorizontallyAfterLongPress) {
+                            updateSwipeSelection(event.rawX)
+                        }
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
                         if (selectedCharacter != null) {
@@ -763,19 +768,13 @@ class PejKeyboardService : InputMethodService() {
         }
     }
 
-    private fun updateSwipeSelection(rawX: Float, rawY: Float) {
-        val x = rawX.toInt()
-        val y = rawY.toInt()
-        val nextIndex = alternatePopupOptions.indexOfFirst { option ->
+    private fun updateSwipeSelection(rawX: Float) {
+        val optionBounds = alternatePopupOptions.map { option ->
             val location = IntArray(2)
             option.getLocationOnScreen(location)
-            Rect(
-                location[0],
-                location[1],
-                location[0] + option.width,
-                location[1] + option.height
-            ).contains(x, y)
+            location[0] to (location[0] + option.width)
         }
+        val nextIndex = findAlternateOptionIndex(rawX, optionBounds)
 
         if (nextIndex == selectedAlternateIndex) {
             return
