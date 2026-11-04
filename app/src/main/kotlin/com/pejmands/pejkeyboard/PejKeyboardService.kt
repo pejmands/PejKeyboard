@@ -189,7 +189,7 @@ class PejKeyboardService : InputMethodService() {
             row,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                48.dp()
+                56.dp()
             )
         )
     }
@@ -234,7 +234,7 @@ class PejKeyboardService : InputMethodService() {
             row,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                48.dp()
+                55.dp()
             )
         )
     }
