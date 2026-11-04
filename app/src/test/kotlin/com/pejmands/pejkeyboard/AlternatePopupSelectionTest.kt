@@ -86,4 +86,61 @@ class AlternatePopupSelectionTest {
     fun rejectsAnEmptyAlternateList() {
         buildAlternatePopupOrder(characterCount = 0, defaultIndex = 0)
     }
+
+    @Test
+    fun fitsEightAlternatesWithinAvailablePopupWidth() {
+        assertEquals(
+            43,
+            calculateAlternateOptionWidth(
+                maxPopupWidth = 360,
+                optionCount = 8,
+                horizontalPadding = 12,
+                preferredWidth = 48,
+                minimumWidth = 36
+            )
+        )
+    }
+
+    @Test
+    fun keepsPreferredWidthWhenThereIsEnoughSpace() {
+        assertEquals(
+            48,
+            calculateAlternateOptionWidth(
+                maxPopupWidth = 420,
+                optionCount = 8,
+                horizontalPadding = 12,
+                preferredWidth = 48,
+                minimumWidth = 36
+            )
+        )
+    }
+
+    @Test
+    fun usesMinimumWidthAndLeavesScrollingAsFallbackOnNarrowScreens() {
+        assertEquals(
+            36,
+            calculateAlternateOptionWidth(
+                maxPopupWidth = 240,
+                optionCount = 8,
+                horizontalPadding = 12,
+                preferredWidth = 48,
+                minimumWidth = 36
+            )
+        )
+    }
+
+    @Test
+    fun calculatesWidthForSingleAlternate() {
+        assertEquals(
+            48,
+            calculateAlternateOptionWidth(
+                maxPopupWidth = 100,
+                optionCount = 1,
+                horizontalPadding = 12,
+                preferredWidth = 48,
+                minimumWidth = 36
+            )
+        )
+    }
+
 }
