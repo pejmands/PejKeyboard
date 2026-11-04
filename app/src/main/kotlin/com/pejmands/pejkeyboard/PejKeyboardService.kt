@@ -477,6 +477,7 @@ class PejKeyboardService : InputMethodService() {
         var downY = 0f
         var movedBeforeLongPress = false
         var longPressTriggered = false
+        var movedHorizontallyAfterLongPress = false
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
@@ -558,6 +559,7 @@ class PejKeyboardService : InputMethodService() {
                     downY = event.rawY
                     movedBeforeLongPress = false
                     longPressTriggered = false
+                    movedHorizontallyAfterLongPress = false
                     selectedAlternateIndex = -1
 
                     longPressRunnable = Runnable {
@@ -583,7 +585,8 @@ class PejKeyboardService : InputMethodService() {
                             keyView.isPressed = false
                             longPressRunnable?.let(gestureHandler::removeCallbacks)
                         }
-                    } else {
+                    } else if (abs(event.rawX - downX) > touchSlop) {
+                        movedHorizontallyAfterLongPress = true
                         updateSwipeSelection(event.rawX)
                     }
                     true
@@ -595,7 +598,9 @@ class PejKeyboardService : InputMethodService() {
                     keyView.isPressed = false
 
                     if (longPressTriggered) {
-                        updateSwipeSelection(event.rawX)
+                        if (movedHorizontallyAfterLongPress) {
+                            updateSwipeSelection(event.rawX)
+                        }
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
                         if (selectedCharacter != null) {
