@@ -31,7 +31,7 @@ internal object PunctuationSpacing {
         val charactersToDelete = if (hasSelection) {
             0
         } else {
-            textBeforeCursor.takeLastWhile(Char::isWhitespace).length
+            textBeforeCursor.takeLastWhile { it.isWhitespace() && it != '\n' && it != '\r' }.length
         }
 
         return PunctuationInsertion(charactersToDelete, "$punctuation ")
