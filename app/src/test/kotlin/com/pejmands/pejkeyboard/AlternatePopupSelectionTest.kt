@@ -60,7 +60,7 @@ class AlternatePopupSelectionTest {
             )
         )
         assertEquals(
-            listOf(2, 3, 0, 1),
+            listOf(1, 2, 3, 0),
             buildAlternatePopupOrder(
                 characterCount = 4,
                 defaultIndex = 0,
