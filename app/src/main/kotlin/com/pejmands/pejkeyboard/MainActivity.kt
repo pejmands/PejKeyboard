@@ -118,6 +118,28 @@ class MainActivity : Activity() {
         addDivider(content)
 
         content.addView(
+            createTitle(R.string.punctuation_spacing_title),
+            matchWidthWrapHeight().apply { bottomMargin = 8.dp() }
+        )
+        content.addView(TextView(this).apply {
+            text = getString(R.string.punctuation_spacing_description)
+            textSize = 14f
+        }, matchWidthWrapHeight().apply { bottomMargin = 12.dp() })
+
+        content.addView(CheckBox(this).apply {
+            text = getString(R.string.punctuation_spacing_enabled)
+            textSize = 15f
+            isChecked = PunctuationSpacingSettings.readEnabled(preferences)
+            setOnCheckedChangeListener { _, isChecked ->
+                preferences.edit()
+                    .putBoolean(PunctuationSpacingSettings.KEY_ENABLED, isChecked)
+                    .apply()
+            }
+        }, matchWidthWrapHeight())
+
+        addDivider(content)
+
+        content.addView(
             createTitle(R.string.keyboard_feedback_title),
             matchWidthWrapHeight().apply { bottomMargin = 12.dp() }
         )
