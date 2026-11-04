@@ -20,6 +20,9 @@
     <string name="gesture_action_delete">Delete</string>
     <string name="gesture_action_backspace">Backspace</string>
     <string name="gesture_action_disabled">غیرفعال</string>
+    <string name="punctuation_spacing_title">فاصله‌گذاری خودکار پس از نشانه‌گذاری</string>
+    <string name="punctuation_spacing_description">پس از درج نقطه، ویرگول و دیگر نشانه‌های پشتیبانی‌شده، فاصله‌های اطراف آن‌ها را اصلاح می‌کند.</string>
+    <string name="punctuation_spacing_enabled">فعال‌سازی فاصله‌گذاری خودکار</string>
     <string name="keyboard_feedback_title">بازخورد کلیدها</string>
     <string name="keyboard_sound_title">صدای کلیدها</string>
     <string name="keyboard_vibration_title">لرزش کلیدها</string>
