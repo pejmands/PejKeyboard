@@ -6,27 +6,84 @@ import org.junit.Test
 class AlternatePopupSelectionTest {
 
     @Test
-    fun selectsOptionByHorizontalPosition() {
-        val bounds = listOf(0 to 44, 44 to 88, 88 to 132)
-
-        assertEquals(0, findAlternateOptionIndex(20f, bounds))
-        assertEquals(1, findAlternateOptionIndex(65f, bounds))
-        assertEquals(2, findAlternateOptionIndex(110f, bounds))
+    fun placesDefaultOptionNearTheCenterForFourAlternates() {
+        assertEquals(
+            listOf(3, 2, 0, 1),
+            buildAlternatePopupOrder(characterCount = 4, defaultIndex = 0)
+        )
     }
 
     @Test
-    fun returnsNoSelectionOutsidePopupWidth() {
-        val bounds = listOf(0 to 44, 44 to 88)
-
-        assertEquals(-1, findAlternateOptionIndex(-1f, bounds))
-        assertEquals(-1, findAlternateOptionIndex(88f, bounds))
+    fun keepsAlternatesBeforeDefaultOnItsLeftAndAfterDefaultOnItsRight() {
+        assertEquals(
+            listOf(0, 1, 2, 3, 4),
+            buildAlternatePopupOrder(characterCount = 5, defaultIndex = 2)
+        )
     }
 
     @Test
-    fun usesHalfOpenBoundsAtOptionEdges() {
-        val bounds = listOf(0 to 44, 44 to 88)
+    fun selectsTheDefaultWithoutHorizontalMovement() {
+        assertEquals(
+            0,
+            findAlternateOptionIndexByDelta(
+                deltaX = 0f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48
+            )
+        )
+    }
 
-        assertEquals(0, findAlternateOptionIndex(43f, bounds))
-        assertEquals(1, findAlternateOptionIndex(44f, bounds))
+    @Test
+    fun movingRightSelectsTheNextConfiguredAlternate() {
+        assertEquals(
+            1,
+            findAlternateOptionIndexByDelta(
+                deltaX = 48f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48
+            )
+        )
+    }
+
+    @Test
+    fun movingLeftSelectsTheNearestAlternateOnTheLeft() {
+        assertEquals(
+            2,
+            findAlternateOptionIndexByDelta(
+                deltaX = -48f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48
+            )
+        )
+    }
+
+    @Test
+    fun clampsSelectionAtTheAvailableAlternates() {
+        assertEquals(
+            3,
+            findAlternateOptionIndexByDelta(
+                deltaX = -500f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48
+            )
+        )
+        assertEquals(
+            1,
+            findAlternateOptionIndexByDelta(
+                deltaX = 500f,
+                defaultIndex = 0,
+                characterCount = 4,
+                optionWidth = 48
+            )
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsAnEmptyAlternateList() {
+        buildAlternatePopupOrder(characterCount = 0, defaultIndex = 0)
     }
 }
