@@ -113,11 +113,7 @@ class PejKeyboardService : InputMethodService() {
         "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
     ) + NumericAlternateCharacters.byKey
 
-    private val numberRows = listOf(
-        listOf("۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"),
-        listOf("@", "#", "$", "%", "&", "-", "+", "(", ")", "/"),
-        listOf("*", "\"", "'", ":", ";", "!", "؟", "=", "_", "،")
-    )
+    private val numberRows = NumberKeyboardRows.rows
 
     override fun onCreateInputView(): View {
         keyboard = GestureKeyboardLayout(
