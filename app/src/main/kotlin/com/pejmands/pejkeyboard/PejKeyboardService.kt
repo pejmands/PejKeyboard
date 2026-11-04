@@ -46,6 +46,7 @@ class PejKeyboardService : InputMethodService() {
     private var lastBackspaceTapUpTime: Long? = null
     private var clearTextPopup: PopupWindow? = null
     private var clearTextCountdownRunnable: Runnable? = null
+    private var autoInsertedPunctuationSpace: String? = null
 
     private lateinit var keyboard: GestureKeyboardLayout
 
@@ -141,6 +142,7 @@ class PejKeyboardService : InputMethodService() {
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         shiftState.reset()
+        autoInsertedPunctuationSpace = null
         dismissAlternatePopup()
         cancelClearTextCountdown()
 
@@ -150,6 +152,7 @@ class PejKeyboardService : InputMethodService() {
     }
 
     override fun onFinishInput() {
+        autoInsertedPunctuationSpace = null
         dismissAlternatePopup()
         cancelClearTextCountdown()
         super.onFinishInput()
@@ -404,6 +407,7 @@ class PejKeyboardService : InputMethodService() {
         steps: Int,
         isFirstStep: Boolean
     ) {
+        autoInsertedPunctuationSpace = null
         val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
         val action = KeyboardGestureSettings.readAction(preferences, direction)
         if (action == KeyboardGestureAction.DISABLED || steps <= 0) {
@@ -888,6 +892,7 @@ class PejKeyboardService : InputMethodService() {
 
         keyView.setOnTouchListener { _, event ->
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                autoInsertedPunctuationSpace = null
                 keyView.isPressed = true
             }
 
@@ -1195,15 +1200,57 @@ class PejKeyboardService : InputMethodService() {
         if (EnterKeyBehavior.shouldPerformEditorAction(imeOptions) &&
             currentInputConnection?.performEditorAction(action) == true
         ) {
+            autoInsertedPunctuationSpace = null
             return
         }
 
+        removeAutoInsertedPunctuationSpace()
         sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
+    }
+
+    private fun removeAutoInsertedPunctuationSpace() {
+        val punctuation = autoInsertedPunctuationSpace ?: return
+        autoInsertedPunctuationSpace = null
+
+        val connection = currentInputConnection ?: return
+        val textBeforeCursor = connection.getTextBeforeCursor(2, 0)?.toString() ?: return
+        if (PunctuationSpacing.hasAutoInsertedSpace(textBeforeCursor, punctuation)) {
+            connection.deleteSurroundingText(1, 0)
+        }
     }
 
     private fun commitKey(key: String) {
         cancelClearTextCountdown()
-        currentInputConnection?.commitText(key, 1)
+        val connection = currentInputConnection ?: return
+        val preferences = getSharedPreferences(BackspaceSettings.PREFERENCES_NAME, MODE_PRIVATE)
+
+        if (key == " " && autoInsertedPunctuationSpace != null) {
+            val textBeforeCursor = connection.getTextBeforeCursor(2, 0)?.toString().orEmpty()
+            if (PunctuationSpacing.hasAutoInsertedSpace(textBeforeCursor, autoInsertedPunctuationSpace!!)) {
+                return
+            }
+        }
+
+        if (PunctuationSpacing.isSupportedPunctuation(key) &&
+            PunctuationSpacingSettings.readEnabled(preferences)
+        ) {
+            val selectedText = connection.getSelectedText(0)
+            val textBeforeCursor = connection.getTextBeforeCursor(64, 0)?.toString().orEmpty()
+            val edit = PunctuationSpacing.createInsertion(
+                textBeforeCursor = textBeforeCursor,
+                punctuation = key,
+                hasSelection = !selectedText.isNullOrEmpty()
+            )
+            if (edit.charactersToDelete > 0) {
+                connection.deleteSurroundingText(edit.charactersToDelete, 0)
+            }
+            connection.commitText(edit.text, 1)
+            autoInsertedPunctuationSpace = key
+            return
+        }
+
+        autoInsertedPunctuationSpace = null
+        connection.commitText(key, 1)
     }
 
     private fun keyLayoutParams(weight: Float = 1f) =
