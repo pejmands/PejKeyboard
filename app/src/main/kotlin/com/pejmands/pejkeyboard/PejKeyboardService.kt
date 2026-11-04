@@ -272,15 +272,17 @@ class PejKeyboardService : InputMethodService() {
             createKey(" ") {
                 commitKey(" ")
             },
-            keyLayoutParams(2f)
+            keyLayoutParams(if (isNumberMode) 3f else 2f)
         )
 
-        row.addView(
-            createKey("◂⁞▸", specialKeyColor, textColor, 16f) {
-                commitKey("\u200C")
-            },
-            keyLayoutParams(1f)
-        )
+        if (!isNumberMode) {
+            row.addView(
+                createKey("◂⁞▸", specialKeyColor, textColor, 16f) {
+                    commitKey("\u200C")
+                },
+                keyLayoutParams(1f)
+            )
+        }
 
         row.addView(
             createKey(".") {
