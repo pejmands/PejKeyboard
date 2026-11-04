@@ -16,7 +16,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.SpannableString
 import android.text.Spanned
-import android.text.style.ForegroundColorSpan
+import android.text.style.SuperscriptSpan
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -705,11 +705,11 @@ class PejKeyboardService : InputMethodService() {
 
             TextView(this).apply {
                 text = if (character == "\u0654") {
-                    SpannableString("\u0627\u0654").apply {
+                    SpannableString(displayCharacter).apply {
                         setSpan(
-                            ForegroundColorSpan(Color.TRANSPARENT),
+                            SuperscriptSpan(),
                             0,
-                            1,
+                            length,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
                     }
