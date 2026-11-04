@@ -104,6 +104,10 @@ internal class GestureKeyboardLayout(
     private var feedbackSent = false
     private var actionDispatched = false
 
+    init {
+        isClickable = true
+    }
+
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
