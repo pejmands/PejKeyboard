@@ -42,11 +42,16 @@ internal fun findAlternateOptionIndexByDelta(
     deltaX: Float,
     defaultIndex: Int,
     characterCount: Int,
-    optionWidth: Int
+    optionWidth: Int,
+    leftOptionCount: Int = characterCount / 2
 ): Int {
     require(optionWidth > 0)
 
-    val visualOrder = buildAlternatePopupOrder(characterCount, defaultIndex)
+    val visualOrder = buildAlternatePopupOrder(
+        characterCount = characterCount,
+        defaultIndex = defaultIndex,
+        leftOptionCount = leftOptionCount
+    )
     val defaultSlot = visualOrder.indexOf(defaultIndex)
     val selectedSlot = (defaultSlot + (deltaX / optionWidth).roundToInt())
         .coerceIn(0, visualOrder.lastIndex)
