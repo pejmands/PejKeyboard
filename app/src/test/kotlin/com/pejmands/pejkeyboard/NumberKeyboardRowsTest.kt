@@ -18,9 +18,9 @@ class NumberKeyboardRowsTest {
     }
 
     @Test
-    fun placesMathOperatorsQuotesAndPunctuationOnTheThirdRow() {
+    fun placesPersianPunctuationAndQuotesOnTheThirdRow() {
         assertEquals(
-            listOf("*", "×", "÷", "=", "^", "_", "«", "»", "؟", "!"),
+            listOf("*", "=", "«", "»", "،", "؛", ":", "؟", "!", "_"),
             NumberKeyboardRows.rows[2]
         )
     }
