@@ -865,7 +865,8 @@ class PejKeyboardService : InputMethodService() {
             deltaX = deltaX,
             defaultIndex = alternatePopupDefaultIndex,
             characterCount = alternatePopupCharacterIndices.size,
-            optionWidth = alternatePopupOptionWidth
+            optionWidth = alternatePopupOptionWidth,
+            leftOptionCount = alternatePopupCharacterIndices.indexOf(alternatePopupDefaultIndex)
         )
 
         if (nextIndex == selectedAlternateIndex) {
