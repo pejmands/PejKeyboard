@@ -7,7 +7,7 @@ private val diacriticDisplayCharacters = mapOf(
     "\u064F" to "\uFE78",
     "\u064B" to "\uFE70",
     "\u0652" to "\uFE7E",
-    "\u0654" to "\u0640\u0654"
+    "\u0654" to "\u25CC\u0654"
 )
 
 private val diacriticCharacters = diacriticDisplayCharacters.keys + "\u0670"
