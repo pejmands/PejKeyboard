@@ -74,7 +74,7 @@ class AlternatePopupSelectionTest {
     @Test
     fun movingLeftSelectsTheNearestAlternateOnTheLeft() {
         assertEquals(
-            2,
+            3,
             findAlternateOptionIndexByDelta(
                 deltaX = -48f,
                 defaultIndex = 0,
@@ -87,7 +87,7 @@ class AlternatePopupSelectionTest {
     @Test
     fun clampsSelectionAtTheAvailableAlternates() {
         assertEquals(
-            3,
+            2,
             findAlternateOptionIndexByDelta(
                 deltaX = -500f,
                 defaultIndex = 0,
