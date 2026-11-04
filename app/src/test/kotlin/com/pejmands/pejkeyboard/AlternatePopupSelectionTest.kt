@@ -30,6 +30,70 @@ class AlternatePopupSelectionTest {
     }
 
     @Test
+    fun placesAllAlternatesToTheRightWhenTheKeyIsNearTheLeftEdge() {
+        assertEquals(
+            0,
+            calculateAlternatePopupLeftOptionCount(
+                optionCount = 10,
+                availableLeftWidth = 12,
+                availableRightWidth = 320
+            )
+        )
+        assertEquals(
+            listOf(0, 1, 2, 3),
+            buildAlternatePopupOrder(
+                characterCount = 4,
+                defaultIndex = 0,
+                leftOptionCount = 0
+            )
+        )
+    }
+
+    @Test
+    fun placesAllAlternatesToTheLeftWhenTheKeyIsNearTheRightEdge() {
+        assertEquals(
+            9,
+            calculateAlternatePopupLeftOptionCount(
+                optionCount = 10,
+                availableLeftWidth = 320,
+                availableRightWidth = 12
+            )
+        )
+        assertEquals(
+            listOf(2, 3, 0, 1),
+            buildAlternatePopupOrder(
+                characterCount = 4,
+                defaultIndex = 0,
+                leftOptionCount = 3
+            )
+        )
+    }
+
+    @Test
+    fun keepsTheDefaultCenteredWhenAvailableSpaceIsBalanced() {
+        assertEquals(
+            5,
+            calculateAlternatePopupLeftOptionCount(
+                optionCount = 10,
+                availableLeftWidth = 160,
+                availableRightWidth = 160
+            )
+        )
+    }
+
+    @Test
+    fun distributesAlternatesAccordingToAvailableSpace() {
+        assertEquals(
+            2,
+            calculateAlternatePopupLeftOptionCount(
+                optionCount = 10,
+                availableLeftWidth = 80,
+                availableRightWidth = 240
+            )
+        )
+    }
+
+    @Test
     fun returnsEveryAlternateExactlyOnceForEveryDefaultPosition() {
         for (characterCount in 1..12) {
             val expectedIndices = (0 until characterCount).toSet()
