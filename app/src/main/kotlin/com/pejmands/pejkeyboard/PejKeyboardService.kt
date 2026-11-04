@@ -108,7 +108,7 @@ class PejKeyboardService : InputMethodService() {
         "ی" to AlternateCharacterSet(listOf("ئ", "ي"), 0),
         "و" to AlternateCharacterSet(listOf("ؤ"), 0),
         " " to AlternateCharacterSet(listOf("ّ", "َ", "ِ", "ُ", "ً", "ْ", "ٰ", "ٔ"), 2),
-        "◂⁞▸" to AlternateCharacterSet(listOf("\u200D"), 0),
+        "◂⁞▸" to halfSpaceAlternates,
         "." to AlternateCharacterSet(listOf("؟", "!"), 0),
         "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
     ) + NumericAlternateCharacters.byKey
