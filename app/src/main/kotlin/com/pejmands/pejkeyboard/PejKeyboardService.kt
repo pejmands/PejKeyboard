@@ -87,14 +87,25 @@ class PejKeyboardService : InputMethodService() {
     )
 
     private val alternateCharacters = mapOf(
-        "ا" to listOf("آ", "أ", "إ"),
-        "ه" to listOf("ة", "ۀ"),
-        "ی" to listOf("ي", "ى", "ئ"),
-        "ک" to listOf("ك"),
-        "و" to listOf("ؤ"),
-        "," to listOf("،", "؛", "…"),
-        "." to listOf("؟", "!", "؛", "…"),
-        "◂⁞▸" to listOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
+        "ح" to AlternateCharacterSet(listOf("۰", "0"), 0),
+        "خ" to AlternateCharacterSet(listOf("۹", "9"), 0),
+        "ه" to AlternateCharacterSet(listOf("۸", "8", "ۀ", "ة"), 0),
+        "ع" to AlternateCharacterSet(listOf("۷", "7"), 0),
+        "غ" to AlternateCharacterSet(listOf("۶", "6"), 0),
+        "ف" to AlternateCharacterSet(listOf("۵", "5"), 0),
+        "ق" to AlternateCharacterSet(listOf("۴", "4"), 0),
+        "ث" to AlternateCharacterSet(listOf("۳", "3"), 0),
+        "ص" to AlternateCharacterSet(listOf("۲", "2"), 0),
+        "ض" to AlternateCharacterSet(listOf("۱", "1"), 0),
+        "ک" to AlternateCharacterSet(listOf("ك"), 0),
+        "ت" to AlternateCharacterSet(listOf("ة"), 0),
+        "ا" to AlternateCharacterSet(listOf("آ", "ء", "أ", "إ"), 0),
+        "ی" to AlternateCharacterSet(listOf("ئ", "ي"), 0),
+        "و" to AlternateCharacterSet(listOf("ؤ"), 0),
+        " " to AlternateCharacterSet(listOf("ّ", "َ", "ِ", "ُ", "ً", "ْ", "ٰ", "ٔ"), 2),
+        "◂⁞▸" to AlternateCharacterSet(listOf("\u200D"), 0),
+        "." to AlternateCharacterSet(listOf("؟", "!"), 0),
+        "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
     )
 
     private val numberRows = listOf(
@@ -239,9 +250,10 @@ class PejKeyboardService : InputMethodService() {
             keyLayoutParams(1f)
         )
 
+        val commaKey = if (isPersian && !isNumberMode) "،" else ","
         row.addView(
-            createKey(",") {
-                commitKey(if (isPersian && !isNumberMode) "،" else ",")
+            createKey(commaKey) {
+                commitKey(commaKey)
             },
             keyLayoutParams(0.65f)
         )
@@ -364,15 +376,15 @@ class PejKeyboardService : InputMethodService() {
                 action()
             }
 
-            val alternatives = alternateCharacters[label.lowercase()]
-            if (!alternatives.isNullOrEmpty()) {
+            val alternateSet = alternateCharacters[label.lowercase()]
+            if (alternateSet != null) {
                 when (getAlternateSelectionMode()) {
                     AlternateSelectionMode.TAP -> {
-                        installTapSelection(this, alternatives, action)
+                        installTapSelection(this, alternateSet, action)
                     }
 
                     AlternateSelectionMode.SWIPE -> {
-                        installSwipeSelection(this, alternatives, action)
+                        installSwipeSelection(this, alternateSet, action)
                     }
                 }
             }
@@ -469,9 +481,11 @@ class PejKeyboardService : InputMethodService() {
 
     private fun installTapSelection(
         keyView: View,
-        alternatives: List<String>,
+        alternateSet: AlternateCharacterSet,
         keyAction: () -> Unit
     ) {
+        val alternatives = alternateSet.characters
+        val defaultIndex = alternateSet.defaultIndex
         val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
         var downX = 0f
         var downY = 0f
@@ -495,7 +509,7 @@ class PejKeyboardService : InputMethodService() {
                     val holdDurationMs = AlternatePopupSettings.readHoldDuration(preferences)
                     longPressRunnable = Runnable {
                         longPressTriggered = true
-                        showAlternatives(keyView, alternatives, swipeSelection = false)
+                        showAlternatives(keyView, alternateSet, swipeSelection = false)
                     }
                     gestureHandler.postDelayed(longPressRunnable!!, holdDurationMs.toLong())
                     true
@@ -560,12 +574,12 @@ class PejKeyboardService : InputMethodService() {
                     movedBeforeLongPress = false
                     longPressTriggered = false
                     movedHorizontallyAfterLongPress = false
-                    selectedAlternateIndex = -1
+                    selectedAlternateIndex = defaultIndex
 
                     longPressRunnable = Runnable {
                         longPressTriggered = true
                         keyView.parent?.requestDisallowInterceptTouchEvent(true)
-                        showAlternatives(keyView, alternatives, swipeSelection = true)
+                        showAlternatives(keyView, alternateSet, swipeSelection = true)
                     }
                     val preferences = getSharedPreferences(
                         BackspaceSettings.PREFERENCES_NAME,
@@ -630,9 +644,12 @@ class PejKeyboardService : InputMethodService() {
 
     private fun showAlternatives(
         anchor: View,
-        alternatives: List<String>,
+        alternateSet: AlternateCharacterSet,
         swipeSelection: Boolean
     ) {
+        val alternatives = alternateSet.characters
+        val defaultIndex = alternateSet.defaultIndex
+        selectedAlternateIndex = defaultIndex
         dismissAlternatePopup()
 
         val popupContent = LinearLayout(this).apply {
@@ -647,19 +664,25 @@ class PejKeyboardService : InputMethodService() {
         }
 
         val optionViews = alternatives.map { character ->
-            val displayCharacter = if (character in DIACRITIC_CHARACTERS) {
-                "◌$character"
-            } else {
-                character
+            val displayCharacter = when {
+                character == "\u200D" -> "▸⁞◂"
+                character in DIACRITIC_CHARACTERS -> "◌$character"
+                else -> character
             }
 
             TextView(this).apply {
                 text = displayCharacter
                 textSize = 20f
-                setTextColor(textColor)
+                setTextColor(if (alternatives.indexOf(character) == defaultIndex) Color.WHITE else textColor)
                 gravity = Gravity.CENTER
                 includeFontPadding = false
                 isSoundEffectsEnabled = false
+                if (alternatives.indexOf(character) == defaultIndex) {
+                    background = GradientDrawable().apply {
+                        setColor(accentColor)
+                        cornerRadius = 8.dp().toFloat()
+                    }
+                }
                 minWidth = 44.dp()
                 minHeight = 44.dp()
 
@@ -764,7 +787,7 @@ class PejKeyboardService : InputMethodService() {
 
         if (swipeSelection) {
             alternatePopupOptions = optionViews
-            selectedAlternateIndex = -1
+            selectedAlternateIndex = defaultIndex
         }
     }
 
@@ -1131,6 +1154,6 @@ class PejKeyboardService : InputMethodService() {
         private const val BACKSPACE_CONTEXT_LENGTH = 2048
         private const val MAX_BACKSPACE_DELETE_BATCHES = 256
         private const val CLEAR_TEXT_COUNTDOWN_UPDATE_MS = 50L
-        private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٍ", "ٌ", "ٰ")
+        private val DIACRITIC_CHARACTERS = setOf("َ", "ِ", "ُ", "ّ", "ْ", "ً", "ٰ", "ٔ")
     }
 }
