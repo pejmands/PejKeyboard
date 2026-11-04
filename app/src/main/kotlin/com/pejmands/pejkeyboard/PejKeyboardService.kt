@@ -178,7 +178,7 @@ class PejKeyboardService : InputMethodService() {
             val displayKey = getDisplayKey(key)
 
             row.addView(
-                createKey(displayKey, bottomInset = 8) {
+                createKey(displayKey, bottomInset = 6) {
                     commitCharacter(displayKey)
                 },
                 keyLayoutParams()
@@ -189,7 +189,7 @@ class PejKeyboardService : InputMethodService() {
             row,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                56.dp()
+                54.dp()
             )
         )
     }
@@ -203,7 +203,7 @@ class PejKeyboardService : InputMethodService() {
                     "⇧",
                     if (shiftState.isShifted || shiftState.isCapsLock) accentColor else specialKeyColor,
                     if (shiftState.isShifted || shiftState.isCapsLock) Color.WHITE else textColor,
-                    bottomInset = 7
+                    bottomInset = 5
                 ) {
                     handleShift()
                 },
@@ -215,14 +215,14 @@ class PejKeyboardService : InputMethodService() {
             val displayKey = getDisplayKey(key)
 
             row.addView(
-                createKey(displayKey, bottomInset = 7) {
+                createKey(displayKey, bottomInset = 5) {
                     commitCharacter(displayKey)
                 },
                 keyLayoutParams()
             )
         }
 
-        val backspaceKey = createKey("⌫", specialKeyColor, bottomInset = 7) {}
+        val backspaceKey = createKey("⌫", specialKeyColor, bottomInset = 5) {}
         installBackspaceBehavior(backspaceKey)
 
         row.addView(
@@ -234,7 +234,7 @@ class PejKeyboardService : InputMethodService() {
             row,
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                55.dp()
+                53.dp()
             )
         )
     }
