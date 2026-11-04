@@ -14,6 +14,9 @@ import android.os.SystemClock
 import android.media.AudioManager
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -701,7 +704,18 @@ class PejKeyboardService : InputMethodService() {
             val isDiacritic = isDiacriticAlternateCharacter(character)
 
             TextView(this).apply {
-                text = displayCharacter
+                text = if (character == "\u0654") {
+                    SpannableString("\u0627\u0654").apply {
+                        setSpan(
+                            ForegroundColorSpan(Color.TRANSPARENT),
+                            0,
+                            1,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                    }
+                } else {
+                    displayCharacter
+                }
                 textSize = if (isDiacritic) 28f else 20f
                 setTextColor(if (characterIndex == defaultIndex) Color.WHITE else textColor)
                 gravity = Gravity.CENTER
