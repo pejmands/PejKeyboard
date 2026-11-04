@@ -477,7 +477,6 @@ class PejKeyboardService : InputMethodService() {
         var downY = 0f
         var movedBeforeLongPress = false
         var longPressTriggered = false
-        var movedHorizontallyAfterLongPress = false
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
@@ -549,6 +548,7 @@ class PejKeyboardService : InputMethodService() {
         var downY = 0f
         var movedBeforeLongPress = false
         var longPressTriggered = false
+        var movedHorizontallyAfterLongPress = false
         var longPressRunnable: Runnable? = null
 
         keyView.setOnTouchListener { _, event ->
