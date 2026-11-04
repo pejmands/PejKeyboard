@@ -22,12 +22,12 @@ class AlternatePopupCharacterDisplayTest {
         assertEquals("\uFE78", alternatePopupCharacterDisplay("\u064F"))
         assertEquals("\uFE70", alternatePopupCharacterDisplay("\u064B"))
         assertEquals("\uFE7E", alternatePopupCharacterDisplay("\u0652"))
+        assertEquals("\uFE80", alternatePopupCharacterDisplay("\u0654"))
     }
 
     @Test
     fun keepsUnmappedDiacriticsAndOrdinaryCharactersUnchanged() {
         assertEquals("\u0670", alternatePopupCharacterDisplay("\u0670"))
-        assertEquals("\u0654", alternatePopupCharacterDisplay("\u0654"))
         assertEquals("ا", alternatePopupCharacterDisplay("ا"))
     }
 
