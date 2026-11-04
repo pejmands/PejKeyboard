@@ -414,7 +414,7 @@ class PejKeyboardService : InputMethodService() {
             action == KeyboardGestureAction.BACKSPACE
         ) {
             val selectedText = connection?.getSelectedText(0)
-            if (!selectedText.isNullOrEmpty()) {
+            if (connection != null && !selectedText.isNullOrEmpty()) {
                 connection.commitText("", 1)
                 return
             }
