@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
@@ -177,7 +178,7 @@ class PejKeyboardService : InputMethodService() {
             val displayKey = getDisplayKey(key)
 
             row.addView(
-                createKey(displayKey) {
+                createKey(displayKey, bottomInset = 8) {
                     commitCharacter(displayKey)
                 },
                 keyLayoutParams()
@@ -189,9 +190,7 @@ class PejKeyboardService : InputMethodService() {
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 48.dp()
-            ).apply {
-                bottomMargin = 8.dp()
-            }
+            )
         )
     }
 
@@ -203,7 +202,8 @@ class PejKeyboardService : InputMethodService() {
                 createKey(
                     "⇧",
                     if (shiftState.isShifted || shiftState.isCapsLock) accentColor else specialKeyColor,
-                    if (shiftState.isShifted || shiftState.isCapsLock) Color.WHITE else textColor
+                    if (shiftState.isShifted || shiftState.isCapsLock) Color.WHITE else textColor,
+                    bottomInset = 7
                 ) {
                     handleShift()
                 },
@@ -215,14 +215,14 @@ class PejKeyboardService : InputMethodService() {
             val displayKey = getDisplayKey(key)
 
             row.addView(
-                createKey(displayKey) {
+                createKey(displayKey, bottomInset = 7) {
                     commitCharacter(displayKey)
                 },
                 keyLayoutParams()
             )
         }
 
-        val backspaceKey = createKey("⌫", specialKeyColor) {}
+        val backspaceKey = createKey("⌫", specialKeyColor, bottomInset = 7) {}
         installBackspaceBehavior(backspaceKey)
 
         row.addView(
@@ -235,9 +235,7 @@ class PejKeyboardService : InputMethodService() {
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 48.dp()
-            ).apply {
-                bottomMargin = 7.dp()
-            }
+            )
         )
     }
 
@@ -341,6 +339,7 @@ class PejKeyboardService : InputMethodService() {
         color: Int = keyColor,
         foregroundColor: Int = textColor,
         size: Float = 20f,
+        bottomInset: Int = 0,
         action: () -> Unit
     ): TextView {
         val shape = GradientDrawable().apply {
@@ -365,13 +364,19 @@ class PejKeyboardService : InputMethodService() {
 
             isSoundEffectsEnabled = false
 
-            background = RippleDrawable(
-                ColorStateList.valueOf(
-                    if (isDarkMode) Color.rgb(190, 198, 212)
-                    else Color.rgb(70, 82, 105)
+            background = InsetDrawable(
+                RippleDrawable(
+                    ColorStateList.valueOf(
+                        if (isDarkMode) Color.rgb(190, 198, 212)
+                        else Color.rgb(70, 82, 105)
+                    ),
+                    shape,
+                    mask
                 ),
-                shape,
-                mask
+                2.dp(),
+                0,
+                2.dp(),
+                bottomInset.dp()
             )
 
             setOnClickListener {
@@ -1206,10 +1211,7 @@ class PejKeyboardService : InputMethodService() {
             0,
             LinearLayout.LayoutParams.MATCH_PARENT,
             weight
-        ).apply {
-            marginStart = 2.dp()
-            marginEnd = 2.dp()
-        }
+        )
 
     private fun Int.dp(): Int =
         (this * resources.displayMetrics.density).toInt()
