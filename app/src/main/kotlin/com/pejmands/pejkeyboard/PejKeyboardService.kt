@@ -28,7 +28,6 @@ import android.widget.ProgressBar
 import android.widget.PopupWindow
 import android.widget.TextView
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class PejKeyboardService : InputMethodService() {
 
@@ -616,7 +615,7 @@ class PejKeyboardService : InputMethodService() {
 
                     if (longPressTriggered) {
                         if (movedHorizontallyAfterLongPress) {
-                            updateSwipeSelection(event.rawX)
+                            updateSwipeSelection(event.rawX - downX)
                         }
                         val selectedCharacter = alternatives.getOrNull(selectedAlternateIndex)
                         dismissAlternatePopup()
