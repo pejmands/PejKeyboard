@@ -9,19 +9,14 @@ internal fun buildAlternatePopupOrder(
     require(characterCount > 0)
     require(defaultIndex in 0 until characterCount)
 
-    val preferredLeftCount = characterCount / 2
-    val leftIndices = (defaultIndex - 1 downTo 0).toList().toMutableList()
+    val leftCount = characterCount / 2
+    val leftIndices = (1..leftCount)
+        .map { (defaultIndex - it + characterCount) % characterCount }
+    val rightCount = characterCount - leftCount - 1
+    val rightIndices = (1..rightCount)
+        .map { (defaultIndex + it) % characterCount }
 
-    if (leftIndices.size < preferredLeftCount) {
-        val additionalLeftIndices = (defaultIndex + 2 until characterCount).toList()
-        leftIndices += additionalLeftIndices.take(preferredLeftCount - leftIndices.size)
-    }
-
-    val rightIndices = (defaultIndex + 1 until characterCount).toList() +
-            (0 until defaultIndex).toList()
-
-    return leftIndices.asReversed() + defaultIndex +
-            rightIndices.take(characterCount - leftIndices.size - 1)
+    return leftIndices.asReversed() + defaultIndex + rightIndices
 }
 
 internal fun findAlternateOptionIndexByDelta(
