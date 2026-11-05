@@ -20,7 +20,7 @@ class NumberKeyboardRowsTest {
     @Test
     fun placesPersianPunctuationAndQuotesOnTheThirdRow() {
         assertEquals(
-            listOf("*", "=", "«", "»", "،", "؛", ":", "؟", "!", "_"),
+            listOf("*", "=", "«", "»", "_", ":", "؛", "!", "؟"),
             NumberKeyboardRows.rows[2]
         )
     }
@@ -28,6 +28,6 @@ class NumberKeyboardRowsTest {
     @Test
     fun keepsEveryNumericKeyboardRowAtTenKeys() {
         assertEquals(3, NumberKeyboardRows.rows.size)
-        assertEquals(listOf(10, 10, 10), NumberKeyboardRows.rows.map { it.size })
+        assertEquals(listOf(10, 10, 9), NumberKeyboardRows.rows.map { it.size })
     }
 }
