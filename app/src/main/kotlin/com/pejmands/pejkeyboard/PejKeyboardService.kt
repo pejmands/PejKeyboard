@@ -110,14 +110,10 @@ class PejKeyboardService : InputMethodService() {
         " " to AlternateCharacterSet(listOf("ّ", "َ", "ِ", "ُ", "ً", "ْ", "ٰ", "ٔ"), 2),
         "◂⁞▸" to halfSpaceAlternates,
         "." to AlternateCharacterSet(listOf("؟", "!"), 0),
-        "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
+        "،" to AlternateCharacterSet(listOf(",", "؛", ":"), 0)
     ) + NumericAlternateCharacters.byKey
 
-    private val numberRows = listOf(
-        listOf("۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹", "۰"),
-        listOf("@", "#", "$", "%", "&", "-", "+", "(", ")", "/"),
-        listOf("*", "\"", "'", ":", ";", "!", "؟", "=", "_", "،")
-    )
+    private val numberRows = NumberKeyboardRows.rows
 
     override fun onCreateInputView(): View {
         keyboard = GestureKeyboardLayout(
@@ -254,7 +250,7 @@ class PejKeyboardService : InputMethodService() {
             keyLayoutParams(1f)
         )
 
-        val commaKey = if (isPersian && !isNumberMode) "،" else ","
+        val commaKey = if (isPersian) "،" else ","
         row.addView(
             createKey(commaKey) {
                 commitKey(commaKey)
@@ -276,15 +272,17 @@ class PejKeyboardService : InputMethodService() {
             createKey(" ") {
                 commitKey(" ")
             },
-            keyLayoutParams(2f)
+            keyLayoutParams(if (isNumberMode) 3f else 2f)
         )
 
-        row.addView(
-            createKey("◂⁞▸", specialKeyColor, textColor, 16f) {
-                commitKey("\u200C")
-            },
-            keyLayoutParams(1f)
-        )
+        if (!isNumberMode) {
+            row.addView(
+                createKey("◂⁞▸", specialKeyColor, textColor, 16f) {
+                    commitKey("\u200C")
+                },
+                keyLayoutParams(1f)
+            )
+        }
 
         row.addView(
             createKey(".") {
