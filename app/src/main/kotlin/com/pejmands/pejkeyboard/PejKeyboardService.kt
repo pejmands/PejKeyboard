@@ -110,7 +110,7 @@ class PejKeyboardService : InputMethodService() {
         " " to AlternateCharacterSet(listOf("ّ", "َ", "ِ", "ُ", "ً", "ْ", "ٰ", "ٔ"), 2),
         "◂⁞▸" to halfSpaceAlternates,
         "." to AlternateCharacterSet(listOf("؟", "!"), 0),
-        "،" to AlternateCharacterSet(listOf("؛", ":"), 0)
+        "،" to AlternateCharacterSet(listOf(",", "؛", ":"), 0)
     ) + NumericAlternateCharacters.byKey
 
     private val numberRows = NumberKeyboardRows.rows
@@ -250,7 +250,7 @@ class PejKeyboardService : InputMethodService() {
             keyLayoutParams(1f)
         )
 
-        val commaKey = if (isPersian && !isNumberMode) "،" else ","
+        val commaKey = if (isPersian) "،" else ","
         row.addView(
             createKey(commaKey) {
                 commitKey(commaKey)
